@@ -19,15 +19,18 @@ const umi = createUmi(RPC_ENDPOINT);
 let keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array(wallet));
 const myKeypairSigner = createSignerFromKeypair(umi, keypair);
 umi.use(signerIdentity(myKeypairSigner));
+
 umi.use(mplTokenMetadata());
 
 const mint = generateSigner(umi);
 
+const uri = "https://arweave.net/P1yMwGcPv6fxQ6L51Gu3m0CJulNpGa13IpPPrSdyPwg";
+
 (async () => {
   let tx = createNft(umi, {
     mint,
-    name: "Kwdi's NFT",
-    uri: "https://arweave.net/fOMZEEM3CvblAJOAymsGodnd4Wyqbzc3FJtDOTx99Sk",
+    name: "Aladin Magic Rug",
+    uri,
     sellerFeeBasisPoints: percentAmount(5.5),
   });
   let result = await tx.sendAndConfirm(umi);

@@ -19,23 +19,25 @@ umi.use(signerIdentity(signer));
 (async () => {
   try {
     const image =
-      "https://arweave.net/CdyIXOzLgyWwRiu7wp8M4V7AvKLeolLXopzFEwxYDqU";
+      "https://arweave.net/bcacosHOqEn9HvIwoxHczxy20ZNfAXYLOnzVQt80ZxY";
     const metadata = {
-      name: "bugz bunny coin",
-      symbol: "bugz",
-      description: "uni metadata test",
+      name: "Aladin Magic Rug",
+      symbol: "RUGG",
+      description: "umi metadata test",
       image,
-      attributes: [{ trait_type: "carrot", value: "10" }],
+      attributes: [{ trait_type: "wishes left", value: "2" }],
       properties: {
         files: [
           {
-            uri: "https://www.arweave.net/abcd5678?ext=png",
+            uri: image,
             type: "image/png",
           },
         ],
       },
     };
+
     const myUri = await umi.uploader.uploadJson(metadata);
+
     console.log("Your URI: ", myUri);
   } catch (error) {
     console.log("Oops.. Something went wrong", error);

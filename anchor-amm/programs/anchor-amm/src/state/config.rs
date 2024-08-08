@@ -11,7 +11,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub const SPACE: usize = 8 + (32 * 3) + 8 + 16;
+    pub const LEN: usize = 8 + (32 * 3) + 8 + 16;
 
     pub fn init(
         &mut self,

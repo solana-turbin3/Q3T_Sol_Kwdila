@@ -5,14 +5,14 @@ use crate::Config;
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
-pub struct Initialize<'info> {
+pub struct InitializeConfig<'info> {
     #[account(mut)]
     pub maker: Signer<'info>,
     pub mint_x: InterfaceAccount<'info, Mint>,
     pub mint_y: InterfaceAccount<'info, Mint>,
     #[account(
         init,
-        seeds = [b"lp", config.key.as_ref()],
+        seeds = [b"lp", config.key().as_ref()],
         payer = maker,
         bump,
         mint::decimals = 6,
@@ -38,8 +38,13 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Initialize<'info> {
-    pub fn initialize_config(&mut self, seed: u64, fee: u16, bumps: InitializeBumps) -> Result<()> {
+impl<'info> InitializeConfig<'info> {
+    pub fn initialize_config(
+        &mut self,
+        seed: u64,
+        fee: u16,
+        bumps: InitializeConfigBumps,
+    ) -> Result<()> {
         self.config.init(
             self.maker.key(),
             self.mint_x.key(),
@@ -47,6 +52,7 @@ impl<'info> Initialize<'info> {
             seed,
             fee,
             bumps.config,
+            bumps.mint_lp,
         );
         Ok(())
     }

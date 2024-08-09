@@ -15,7 +15,7 @@ declare_id!("EGdJBLJzozGgDtZpnqowyuzEd3ioQYgjSCoW1Tgu7CBC");
 pub mod anchor_amm {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        ctx.accounts.initialize_config()
+    pub fn initialize(ctx: Context<InitializeConfig>, seed: u64, fee: u16) -> Result<()> {
+        ctx.accounts.initialize_config(seed, fee, ctx.bumps)
     }
 }

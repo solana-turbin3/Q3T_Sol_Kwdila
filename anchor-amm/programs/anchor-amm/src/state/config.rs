@@ -8,6 +8,7 @@ pub struct Config {
     pub seed: u64,
     pub fee: u16, //Bases Fee
     pub bump: u8,
+    pub lp_bump: u8,
 }
 
 impl Config {
@@ -21,6 +22,7 @@ impl Config {
         seed: u64,
         fee: u16,
         bump: u8,
+        lp_bump: u8,
     ) {
         self.maker = maker;
         self.mint_x = mint_x;
@@ -28,5 +30,6 @@ impl Config {
         self.seed = seed;
         self.fee = fee;
         self.bump = bump;
+        self.lp_bump = lp_bump;
     }
 }

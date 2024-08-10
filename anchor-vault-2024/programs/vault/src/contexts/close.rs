@@ -6,7 +6,7 @@ use anchor_lang::{
 
 #[derive(Accounts)]
 pub struct Close<'info> {
-    #[account()]
+    #[account(mut)]
     pub signer: Signer<'info>,
     #[account(
         mut,
@@ -31,7 +31,7 @@ impl<'info> Close<'info> {
             to: self.signer.to_account_info(),
         };
 
-        let seeds = &[
+        let seeds = [
             b"vault",
             self.state.to_account_info().key.as_ref(),
             &[self.state.vault_bump],

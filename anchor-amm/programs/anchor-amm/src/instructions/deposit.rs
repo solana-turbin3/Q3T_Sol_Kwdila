@@ -43,20 +43,21 @@ pub struct Initialize<'info> {
     pub provider_ata_lp: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
+        init,
+        payer=provider,
         associated_token::mint = mint_x,
         associated_token::authority = config
     )]
     pub vault_x: InterfaceAccount<'info, TokenAccount>,
     #[account(
+        init,
+        payer=provider,
         associated_token::mint = mint_y,
         associated_token::authority = config
     )]
     pub vault_y: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
-        has_one=mint_x,
-        has_one=mint_y,
-
         seeds=[
             b"config",
             provider.key().to_bytes().as_ref(),
@@ -73,7 +74,7 @@ pub struct Initialize<'info> {
 }
 
 impl<'info> Initialize<'info> {
-    pub fn deposit(&mut self, amount: u64, is_x: bool) -> Result<()> {
+    pub fn deposit(&mut self, amount: u64, max_x: u64, max_y: u64, is_x: bool) -> Result<()> {
         let (mint, provider_ata, vault, decimals) = match is_x {
             true => (
                 self.mint_x.to_account_info(),
@@ -91,11 +92,12 @@ impl<'info> Initialize<'info> {
         let accounts = TransferChecked {
             from: provider_ata,
             to: vault,
-            mint: mint,
+            mint,
             authority: self.provider.to_account_info(),
         };
         let ctx = CpiContext::new(self.token_program.to_account_info(), accounts);
 
+        let amount: u64 = ;
         transfer_checked(ctx, amount, decimals)?;
         Ok(())
     }

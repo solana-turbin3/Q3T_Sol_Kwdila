@@ -4,7 +4,7 @@ mod contexts;
 use contexts::*;
 mod state;
 
-declare_id!("Gh5ShrdXL8zFGH5UyfAc12WjhRpKv3Kcvz4hQ1jKf74C");
+declare_id!("GBXjiMa13stmnTPQfe23rQDwuVCitr1zA5vgeCXozhYf");
 
 #[program]
 pub mod vault {

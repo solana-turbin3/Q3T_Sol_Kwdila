@@ -10,37 +10,39 @@ use crate::Config;
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
-pub struct Initialize<'info> {
+pub struct Deposit<'info> {
     #[account(mut)]
     pub provider: Signer<'info>,
-    pub mint_x: InterfaceAccount<'info, Mint>,
-    pub mint_y: InterfaceAccount<'info, Mint>,
+    pub mint_x: Box<InterfaceAccount<'info, Mint>>,
+    pub mint_y: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         mut,
         seeds = [b"lp", config.key().as_ref()],
         bump=config.lp_bump,
+        mint::authority=config,
+        mint::decimals=6
     )]
-    pub mint_lp: InterfaceAccount<'info, Mint>,
+    pub mint_lp: Box<InterfaceAccount<'info, Mint>>,
 
     #[account(
         mut,
         associated_token::mint = mint_x,
         associated_token::authority = provider
     )]
-    pub provider_ata_x: InterfaceAccount<'info, TokenAccount>,
+    pub provider_ata_x: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = mint_y,
         associated_token::authority = provider
     )]
-    pub provider_ata_y: InterfaceAccount<'info, TokenAccount>,
+    pub provider_ata_y: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         payer = provider,
         associated_token::mint = mint_lp,
         associated_token::authority = provider
     )]
-    pub provider_ata_lp: InterfaceAccount<'info, TokenAccount>,
+    pub provider_ata_lp: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         init,
@@ -48,14 +50,14 @@ pub struct Initialize<'info> {
         associated_token::mint = mint_x,
         associated_token::authority = config
     )]
-    pub vault_x: InterfaceAccount<'info, TokenAccount>,
+    pub vault_x: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init,
         payer=provider,
         associated_token::mint = mint_y,
         associated_token::authority = config
     )]
-    pub vault_y: InterfaceAccount<'info, TokenAccount>,
+    pub vault_y: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(
         seeds=[
@@ -73,8 +75,8 @@ pub struct Initialize<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> Initialize<'info> {
-    pub fn deposit(&mut self, amount: u64, max_x: u64, max_y: u64, is_x: bool) -> Result<()> {
+impl<'info> Deposit<'info> {
+    pub fn deposit(&mut self, amount: u64, is_x: bool) -> Result<()> {
         let (mint, provider_ata, vault, decimals) = match is_x {
             true => (
                 self.mint_x.to_account_info(),
@@ -97,23 +99,21 @@ impl<'info> Initialize<'info> {
         };
         let ctx = CpiContext::new(self.token_program.to_account_info(), accounts);
 
-        let amount: u64 = ;
         transfer_checked(ctx, amount, decimals)?;
         Ok(())
     }
-    pub fn mint_lp_token(&mut self, max_x: u64, max_y: u64) -> Result<()> {
-        let amount = max_x
-            .checked_mul(max_y)
-            .ok_or(ProgramError::ArithmeticOverflow)?;
+    pub fn mint_lp_token(&mut self, amount: u64) -> Result<()> {
         let accounts = MintTo {
             mint: self.mint_lp.to_account_info(),
             to: self.provider_ata_lp.to_account_info(),
             authority: self.config.to_account_info(),
         };
+
         let provider_key = self.provider.key().to_bytes();
         let mint_y = self.mint_y.key().to_bytes();
         let mint_x = self.mint_x.key().to_bytes();
         let seed = self.config.seed.to_le_bytes();
+
         let seeds = [
             b"config",
             provider_key.as_ref(),
@@ -122,12 +122,14 @@ impl<'info> Initialize<'info> {
             seed.as_ref(),
         ];
         let signer_seeds = &[&seeds[..]];
+
         let ctx = CpiContext::new_with_signer(
             self.token_program.to_account_info(),
             accounts,
             signer_seeds,
         );
         mint_to(ctx, amount)?;
+
         Ok(())
     }
 }

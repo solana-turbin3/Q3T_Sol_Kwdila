@@ -23,4 +23,9 @@ pub mod anchor_escrow {
 
         Ok(())
     }
+    pub fn take(ctx: Context<Take>) -> Result<()> {
+        ctx.accounts.deposit_into_vault()?;
+        ctx.accounts.withdraw_and_close_vault()?;
+        Ok(())
+    }
 }

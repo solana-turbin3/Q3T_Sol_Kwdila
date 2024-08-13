@@ -7,7 +7,6 @@ use anchor_spl::token_interface::{
 use crate::Escrow;
 
 #[derive(Accounts)]
-#[instruction(seed:u64)]
 pub struct Take<'info> {
     #[account(mut)]
     pub maker: SystemAccount<'info>,
@@ -28,11 +27,11 @@ pub struct Take<'info> {
     pub taker_ata_b: InterfaceAccount<'info, TokenAccount>,
 
     #[account(
-mut,
+        mut,
         seeds = [
             b"escrow",
             escrow.maker.as_ref(),
-            seed.to_le_bytes().as_ref()
+            escrow.seed.to_le_bytes().as_ref()
         ],
         bump = escrow.bump
     )]

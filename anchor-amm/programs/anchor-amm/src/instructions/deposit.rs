@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -6,7 +8,9 @@ use anchor_spl::{
     },
 };
 
-use crate::Config;
+use constant_product_curve;
+
+use crate::{error::AmmError, Config};
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
@@ -76,7 +80,34 @@ pub struct Deposit<'info> {
 }
 
 impl<'info> Deposit<'info> {
-    pub fn deposit(&mut self, amount: u64, is_x: bool) -> Result<()> {
+    pub fn deposit(&mut self, amount: u64, max_x: u64, max_y: u64) -> Result<()> {
+        require_neq!(self.config.locked, true);
+        require!(
+            amount != 0 && max_x != 0 && max_y != 0,
+            AmmError::ZeroBalance
+        );
+
+        let (x, y) = match self.vault_x.amount + self.vault_y.amount + self.mint_lp.supply == 0 {
+            true => (max_x, max_y),
+            false => {
+                let amounts = constant_product_curve::ConstantProduct::xy_deposit_amounts_from_l(
+                    max_x,
+                    max_y,
+                    self.mint_lp.supply,
+                    amount,
+                    self.mint_lp.decimals as u32,
+                )
+                .map_err(AmmError::from)?;
+                (amounts.x, amounts.y)
+            }
+        };
+
+        require!(x <= max_x && y <= max_y, AmmError::SlippageExceeded);
+        self.deposit_tokens(x, true)?;
+        self.deposit_tokens(y, false)?;
+        self.mint_lp_tokens(amount)
+    }
+    pub fn deposit_tokens(&mut self, amount: u64, is_x: bool) -> Result<()> {
         let (mint, provider_ata, vault, decimals) = match is_x {
             true => (
                 self.mint_x.to_account_info(),
@@ -102,7 +133,7 @@ impl<'info> Deposit<'info> {
         transfer_checked(ctx, amount, decimals)?;
         Ok(())
     }
-    pub fn mint_lp_token(&mut self, amount: u64) -> Result<()> {
+    pub fn mint_lp_tokens(&mut self, amount: u64) -> Result<()> {
         let accounts = MintTo {
             mint: self.mint_lp.to_account_info(),
             to: self.provider_ata_lp.to_account_info(),

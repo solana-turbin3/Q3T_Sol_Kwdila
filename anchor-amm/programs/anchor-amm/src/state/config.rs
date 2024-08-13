@@ -9,6 +9,7 @@ pub struct Config {
     pub fee: u16, //Bases Fee
     pub bump: u8,
     pub lp_bump: u8,
+    pub locked: bool,
 }
 
 impl Config {
@@ -23,6 +24,7 @@ impl Config {
         fee: u16,
         bump: u8,
         lp_bump: u8,
+        locked: bool,
     ) {
         self.maker = maker;
         self.mint_x = mint_x;
@@ -31,5 +33,6 @@ impl Config {
         self.fee = fee;
         self.bump = bump;
         self.lp_bump = lp_bump;
+        self.locked = locked;
     }
 }

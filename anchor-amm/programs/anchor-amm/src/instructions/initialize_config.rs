@@ -53,6 +53,7 @@ impl<'info> InitializeConfig<'info> {
             fee,
             bumps.config,
             bumps.mint_lp,
+            false,
         );
         Ok(())
     }

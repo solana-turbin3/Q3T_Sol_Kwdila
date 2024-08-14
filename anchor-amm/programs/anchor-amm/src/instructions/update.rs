@@ -21,7 +21,7 @@ pub struct UpdateConfig<'info> {
 }
 
 impl<'info> UpdateConfig<'info> {
-        pub fn lock(
+    pub fn lock(
         &mut self,
     ) -> Result<()> {
         self.config.locked = true;

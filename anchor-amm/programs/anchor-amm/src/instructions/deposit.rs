@@ -1,5 +1,3 @@
-use std::ops::Not;
-
 use anchor_lang::prelude::*;
 use anchor_spl::{
     associated_token::AssociatedToken,
@@ -111,13 +109,13 @@ impl<'info> Deposit<'info> {
         let (mint, provider_ata, vault, decimals) = match is_x {
             true => (
                 self.mint_x.to_account_info(),
-                self.mint_x.to_account_info(),
+                self.provider_ata_x.to_account_info(),
                 self.vault_x.to_account_info(),
                 self.mint_x.decimals,
             ),
             false => (
                 self.mint_y.to_account_info(),
-                self.mint_y.to_account_info(),
+                self.provider_ata_y.to_account_info(),
                 self.vault_y.to_account_info(),
                 self.mint_y.decimals,
             ),

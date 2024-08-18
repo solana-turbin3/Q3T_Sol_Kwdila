@@ -178,7 +178,7 @@ describe("nft-staking", () => {
       userAccount,
       rewardsMint,
       config,
-      rewardsAta,
+      userRewardAta:rewardsAta,
       systemProgram: SYSTEM_PROGRAM_ID,
       tokenProgram: TOKEN_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,

@@ -16,7 +16,6 @@ pub struct Unstake<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     pub mint: Account<'info, Mint>,
-    pub collection: Account<'info, Mint>,
     #[account(
         mut,
         associated_token::mint = mint,
@@ -31,8 +30,6 @@ pub struct Unstake<'info> {
         ],
         seeds::program = metadata_program.key(),
         bump,
-        constraint = metadata.collection.as_ref().unwrap().key.as_ref() == collection.key().as_ref(),
-        constraint = metadata.collection.as_ref().unwrap().verified == true,
     )]
     pub metadata: Account<'info, MetadataAccount>,
     #[account(
@@ -82,6 +79,7 @@ impl<'info> Unstake<'info> {
             b"stake".as_ref(),
             self.mint.to_account_info().key.as_ref(),
             self.config.to_account_info().key.as_ref(),
+            &[self.stake_account.bump],
         ];
 
         ThawDelegatedAccountCpi::new(

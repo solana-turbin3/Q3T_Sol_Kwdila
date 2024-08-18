@@ -11,6 +11,7 @@ pub struct Claim<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(
+        mut,
         seeds = [b"rewards".as_ref(), config.key().as_ref()],
         bump = config.rewards_bump,
         mint::decimals = 6,

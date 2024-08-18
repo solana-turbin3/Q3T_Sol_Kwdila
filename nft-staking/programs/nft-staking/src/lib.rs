@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("H7kR1mrxfYGYk9aj9NzoR8QgxKqdnuQGMzhdntoKXwwM");
+declare_id!("8kvkxfR2mthDXHSzJxnKNEajwscN9VXcGU5WyNVsVEAq");
 
 mod errors;
 mod instructions;
@@ -34,7 +34,7 @@ pub mod nft_staking {
         ctx.accounts.unstake()
     }
 
-    //     pub fn claim(ctx: Context<Claim>) -> Result<()> {
-    //         ctx.accounts.claim()
-    //     }
+    pub fn claim(ctx: Context<Claim>) -> Result<()> {
+        ctx.accounts.claim_rewards()
+    }
 }

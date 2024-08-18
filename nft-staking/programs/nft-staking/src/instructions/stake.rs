@@ -58,7 +58,7 @@ pub struct Stake<'info> {
         init,
         payer = user,
         space = StakeAccount::INIT_SPACE,
-        seeds = [b"stake".as_ref(), mint.key().as_ref(), config.key().as_ref()],
+        seeds = [b"stake", mint.key().as_ref(), config.key().as_ref()],
         bump,
     )]
     pub stake_account: Account<'info, StakeAccount>,
@@ -75,6 +75,13 @@ pub struct Stake<'info> {
 
 impl<'info> Stake<'info> {
     pub fn stake(&mut self, bumps: &StakeBumps) -> Result<()> {
+        self.stake_account.set_inner(StakeAccount {
+            owner: self.user.key(),
+            mint: self.mint.key(),
+            last_update: Clock::get()?.unix_timestamp,
+            bump: bumps.stake_account,
+        });
+
         let cpi_program = self.token_program.to_account_info();
 
         let cpi_accounts = Approve {
@@ -95,9 +102,10 @@ impl<'info> Stake<'info> {
         let metadata_program = &self.metadata_program.to_account_info();
 
         let seeds = [
-            b"stake".as_ref(),
+            b"stake",
             self.mint.to_account_info().key.as_ref(),
             self.config.to_account_info().key.as_ref(),
+            &[self.stake_account.bump],
         ];
 
         FreezeDelegatedAccountCpi::new(
@@ -111,13 +119,6 @@ impl<'info> Stake<'info> {
             },
         )
         .invoke_signed(&[&seeds[..]])?;
-
-        self.stake_account.set_inner(StakeAccount {
-            owner: self.user.key(),
-            mint: self.mint.key(),
-            last_update: Clock::get()?.unix_timestamp,
-            bump: bumps.stake_account,
-        });
 
         require!(
             self.user_account.amount_staked < self.config.max_stake,

@@ -2,17 +2,14 @@ use anchor_lang::prelude::*;
 use anchor_spl::{
     metadata::{
         mpl_token_metadata::instructions::{
-            FreezeDelegatedAccountCpi, FreezeDelegatedAccountCpiAccounts,
+            ThawDelegatedAccountCpi, ThawDelegatedAccountCpiAccounts,
         },
         MasterEditionAccount, Metadata, MetadataAccount,
     },
-    token::{approve, Approve, Mint, Token, TokenAccount},
+    token::{revoke, Mint, Revoke, Token, TokenAccount},
 };
 
-use crate::{
-    errors::StakeError,
-    state::{StakeAccount, StakeConfig, UserAccount},
-};
+use crate::state::{StakeAccount, StakeConfig, UserAccount};
 
 #[derive(Accounts)]
 pub struct Unstake<'info> {
@@ -49,13 +46,16 @@ pub struct Unstake<'info> {
         bump,
     )]
     pub edition: Account<'info, MasterEditionAccount>,
+    #[account(
+        seeds = [b"config".as_ref()],
+        bump =config.bump,
+    )]
     pub config: Account<'info, StakeConfig>,
     #[account(
-        init,
-        payer = user,
-        space = StakeAccount::INIT_SPACE,
+        mut,
+        close=user,
         seeds = [b"stake".as_ref(), mint.key().as_ref(), config.key().as_ref()],
-        bump,
+        bump = stake_account.bump,
     )]
     pub stake_account: Account<'info, StakeAccount>,
     #[account(
@@ -70,19 +70,7 @@ pub struct Unstake<'info> {
 }
 
 impl<'info> Unstake<'info> {
-    pub fn unstake(&mut self, bumps: &UnstakeBumps) -> Result<()> {
-        let cpi_program = self.token_program.to_account_info();
-
-        let cpi_accounts = Approve {
-            to: self.mint_ata.to_account_info(),
-            delegate: self.stake_account.to_account_info(),
-            authority: self.user.to_account_info(),
-        };
-
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-
-        approve(cpi_ctx, 1)?;
-
+    pub fn unstake(&mut self) -> Result<()> {
         let delegate = &self.stake_account.to_account_info();
         let token_account = &self.mint_ata.to_account_info();
         let edition = &self.edition.to_account_info();
@@ -90,9 +78,15 @@ impl<'info> Unstake<'info> {
         let token_program = &self.token_program.to_account_info();
         let metadata_program = &self.metadata_program.to_account_info();
 
-        FreezeDelegatedAccountCpi::new(
+        let seeds = [
+            b"stake".as_ref(),
+            self.mint.to_account_info().key.as_ref(),
+            self.config.to_account_info().key.as_ref(),
+        ];
+
+        ThawDelegatedAccountCpi::new(
             metadata_program,
-            FreezeDelegatedAccountCpiAccounts {
+            ThawDelegatedAccountCpiAccounts {
                 delegate,
                 token_account,
                 edition,
@@ -100,20 +94,26 @@ impl<'info> Unstake<'info> {
                 token_program,
             },
         )
-        .invoke()?;
+        .invoke_signed(&[&seeds[..]])?;
 
-        self.stake_account.set_inner(StakeAccount {
-            owner: self.user.key(),
-            mint: self.mint.key(),
-            last_update: Clock::get()?.unix_timestamp,
-            bump: bumps.stake_account,
-        });
+        self.user_account.amount_staked -= 1;
 
-        require!(
-            self.user_account.amount_staked < self.config.max_stake,
-            StakeError::MaxStakeReached
-        );
-        self.user_account.amount_staked += 1;
+        let days = ((Clock::get()?.unix_timestamp - self.stake_account.last_update) / 86400) as u32;
+
+        //require!(time_elapsed >= self.config.freeze_period, "Cannot unstake yet");
+
+        self.user_account.points += days * self.config.points_per_stake as u32;
+
+        let cpi_program = self.token_program.to_account_info();
+
+        let cpi_accounts = Revoke {
+            source: self.mint_ata.to_account_info(),
+            authority: self.user.to_account_info(),
+        };
+
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+        revoke(cpi_ctx)?;
 
         Ok(())
     }

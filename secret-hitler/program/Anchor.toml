@@ -1,13 +1,17 @@
+[toolchain]
+
 [features]
-seeds = false
+resolution = true
+skip-lint = false
+
 [programs.localnet]
-secret_hitler = "MkabCfyUD6rBTaYHpgKBBpBo5qzWA2pK2hrGGKMurJt"
+secret_hitler = "AnvTCoxxQzscMBqVPtdEsc6it1U39rmqt6rQvfCt9Uac"
 
 [registry]
 url = "https://anchor.projectserum.com"
 
 [provider]
-cluster = "devnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

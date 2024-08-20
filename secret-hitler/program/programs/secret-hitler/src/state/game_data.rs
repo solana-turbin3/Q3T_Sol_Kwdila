@@ -67,7 +67,8 @@ impl GameData {
         self.bet_amount = bet_amount;
 
         self.game_state = GameState::Setup;
-        self.libral_cards_left = 
+        self.libral_cards_left = NUM_LIBERAL_POLICIES;
+        self.fascist_cards_left = NUM_FASCIST_POLICIES;
 
         self.bump = game_data_bump;
         self.deposit_vault_bump = deposit_vault_bump;

@@ -19,5 +19,5 @@ pub enum GameErrorCode {
     #[msg("5 to 10 players are needed to play")]
     MinimumPlayersNotReached,
     #[msg("The nominated chancellor is ineligible")]
-    InvalidChancellorNominated,
+    IneligibleChancellorNominated,
 }

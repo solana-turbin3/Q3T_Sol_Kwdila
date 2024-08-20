@@ -6,10 +6,10 @@ use crate::{constants::{NUM_FASCIST_POLICIES,NUM_LIBERAL_POLICIES}, enums::GameS
 pub struct GameData {
     pub host: Pubkey,
 
-    pub current_president_index: usize,
-    pub current_chancellor_index: Option<usize>,
-    pub previous_president_index: Option<usize>,
-    pub previous_chancellor_index: Option<usize>,
+    pub current_president_index: u8,
+    pub current_chancellor_index: Option<u8>,
+    pub previous_president_index: Option<u8>,
+    pub previous_chancellor_index: Option<u8>,
 
     pub max_players: u8,
     pub player_count: u8,
@@ -33,12 +33,11 @@ impl Space for GameData {
     const INIT_SPACE: usize = 
     8               // anchor descriminator
     + 32            // pubkey
-    + 8             // usize
-    + 1 * 6         // u8
+    + 1 * 7         // u8
     + 4 + 32 * 10   // Vec<Pubkey>
-    + 9 * 5         // Option<u64 or usize>
+    + 9 * 5         // Option<u64>
     + 1             // GameState
-    + 2 * 2         // Option<u8>
+    + 2 * 5         // Option<u8>
     ;
 }
 

@@ -62,6 +62,8 @@ impl<'info> InitializeGame<'info> {
         bet_amount: Option<u64>,
         bumps: InitializeGameBumps,
     ) -> Result<()> {
+        require!(max_players >= 5,GameErrorCode::MinimumPlayersNotReached);
+        
         self.game_data.init(
             self.host.key(),
             max_players,

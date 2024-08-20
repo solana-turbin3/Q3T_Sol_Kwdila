@@ -2,13 +2,13 @@ use anchor_lang::error_code;
 
 #[error_code]
 pub enum GameErrorCode {
-    #[msg("Game must be in Setup state to join")]
-    GameNotInSetupState,
+    #[msg("The Game must be in the required game state")]
+    InvalidGameState,
     #[msg("Player has already joined the game")]
     PlayerAlreadyJoined,
     #[msg("The game is full")]
     MaxPlayersReached,
-    #[msg("The player is not in the game")]
+    #[msg("The specified player/pubkey is not in the game")]
     PlayerNotInGame,
     #[msg("Host Player Can not leave game. Consider ending game instead")]
     HostPlayerLeaving,
@@ -16,4 +16,8 @@ pub enum GameErrorCode {
     BetVaultNotFound,
     #[msg("Deposit vault must be provided with deposit amount")]
     DepositVaultNotFound,
+    #[msg("5 to 10 players are needed to play")]
+    MinimumPlayersNotReached,
+    #[msg("The nominated chancellor is ineligible")]
+    InvalidChancellorNominated,
 }

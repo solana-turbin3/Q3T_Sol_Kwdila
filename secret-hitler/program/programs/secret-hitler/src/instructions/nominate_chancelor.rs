@@ -1,52 +1,71 @@
 use anchor_lang::prelude::*;
 
+use crate::enums::GameState;
 use crate::state::{game_data::GameData, player_data::PlayerData};
+use crate::{nominate_chancelor, GameErrorCode};
 
 #[derive(Accounts)]
-pub struct InitializeGame<'info> {
+pub struct NominateChancellor<'info> {
     #[account(
         mut,
-        address=game_data.current_president
     )]
     pub president: Signer<'info>,
     #[account(
-        seeds = [
-            b"deposit",
-            game_data.key().to_bytes().as_ref()
-        ],
-        bump = game_data.depo
-    )]
-    pub deposit_vault: SystemAccount<'info>,
-    #[account(
         seeds = [            
             game_data.key().to_bytes().as_ref(),
-            host.key().to_bytes().as_ref()
+            president.key().to_bytes().as_ref(),
         ],
-        bump
+        bump = player_data.bump,
+        constraint = player_data.is_in_game @GameErrorCode::PlayerNotInGame
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(
-        init,
-        payer=host,
-        space=GameData::INIT_SPACE,
         seeds = [
             b"secret_hitler",
-            host.key().to_bytes().as_ref()
+            game_data.host.to_bytes().as_ref(),
         ],
-        bump
+        bump = game_data.bump,
+
+        constraint = president.key().eq(
+            game_data.players.get(game_data.current_president_index).unwrap() // this is checked
+        ) @GameErrorCode::PlayerNotInGame,
+
+        constraint = 
+            [GameState::Setup,GameState::PostLegislative]
+                .contains(&game_data.game_state) @GameErrorCode::InvalidGameState
     )]
     pub game_data: Account<'info, GameData>,
-    pub system_program: Program<'info, System>,
 }
 
-impl<'info> InitializeGame<'info> {
+impl<'info> NominateChancellor<'info> {
     pub fn nominate_chancellor(
         &mut self,
-        max_players: u8,
-        entry_deposit: Option<u64>,
-        bet_amount: Option<u64>,
-        bumps: InitializeGameBumps,
+        nominated_chancellor_index: usize,
     ) -> Result<()> {
-        todo!()
+        let game = &mut self.game_data;
+        require!(nominated_chancellor_index < 10 ,GameErrorCode::PlayerNotInGame);
+        let nominate_chancelor = game.players.get(nominated_chancellor_index).unwrap();
+
+        let nomination_check: bool = 
+            match game.previous_chancellor_index.is_some(){
+                true => {
+                    match game.player_count <= 5 {
+                        true => {
+                            game.players.get(game.previous_chancellor_index.unwrap()).unwrap().eq(nominate_chancelor)
+                        },
+                        false => {
+                            true
+                        },
+                    }
+                },
+                false =>{
+                    true
+                }
+            };
+        require!(nomination_check,GameErrorCode::InvalidChancellorNominated);
+        
+        
+        Ok(())
     }
+    
 }

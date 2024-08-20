@@ -17,7 +17,8 @@ pub struct LeaveGame<'info> {
             game_data.key().to_bytes().as_ref(),
             player.key().to_bytes().as_ref()
         ],
-        bump = player_data.bump
+        bump = player_data.bump,
+        constraint = player_data.is_in_game @GameErrorCode::PlayerNotInGame
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(
@@ -43,7 +44,7 @@ pub struct LeaveGame<'info> {
             game_data.host.to_bytes().as_ref(),
         ],
         bump = game_data.bump,
-        constraint = game_data.game_state == GameState::Setup @GameErrorCode::GameNotInSetupState,
+        constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
         constraint = game_data.players.contains(player.key) @GameErrorCode::PlayerNotInGame,
         constraint = game_data.host.ne(player.key) @GameErrorCode::HostPlayerLeaving,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositVaultNotFound,

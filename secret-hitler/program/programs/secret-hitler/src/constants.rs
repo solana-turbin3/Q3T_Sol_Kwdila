@@ -1,3 +1,18 @@
-pub const TIME_TO_REFILL_ENERGY: i64 = 60;
-pub const MAX_ENERGY: u64 = 100;
-pub const MAX_WOOD_PER_TREE: u64 = 100000;
+use anchor_lang::constant;
+
+#[constant]
+pub const NUM_FASCIST_POLICIES: u8 = 11;
+#[constant]
+pub const NUM_LIBERAL_POLICIES: u8 = 6;
+
+#[constant]
+pub const MIN_PLAYERS: u8 = 5;
+#[constant]
+pub const MAX_PLAYERS: u8 = 10;
+
+#[constant]
+pub const MAX_FAILED_ELECTIONS: u8 = 3;
+#[constant]
+pub const PRESIDENT_DRAW_SIZE: u8 = 3;
+#[constant]
+pub const CHANCELLOR_DRAW_SIZE: u8 = 2;

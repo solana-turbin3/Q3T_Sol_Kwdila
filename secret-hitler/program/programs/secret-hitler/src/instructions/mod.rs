@@ -1,6 +1,4 @@
-//! All instructions
-pub mod chop_tree;
-pub mod init_player;
-
-pub use chop_tree::*;
-pub use init_player::*;
+pub mod initialize_game;
+pub mod join_game;
+pub mod leave_game;
+pub mod nominate_chancelor;

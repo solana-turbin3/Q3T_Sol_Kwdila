@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, system_program::{Transfer,transfer}};
 
-use crate::{state::{game_data::GameData, player_data::PlayerData}, GameErrorCode};
+use crate::{constants::{MAX_PLAYERS, MIN_PLAYERS}, state::{game_data::GameData, player_data::PlayerData}, GameErrorCode};
 
 #[derive(Accounts)]
 pub struct InitializeGame<'info> {
@@ -62,7 +62,8 @@ impl<'info> InitializeGame<'info> {
         bet_amount: Option<u64>,
         bumps: InitializeGameBumps,
     ) -> Result<()> {
-        require!(max_players >= 5,GameErrorCode::MinimumPlayersNotReached);
+        require!(max_players >= MIN_PLAYERS,GameErrorCode::MinimumPlayersNotReached);
+        require!(max_players <= MAX_PLAYERS,GameErrorCode::MaxPlayersReached);
 
         let clock = Clock::get()?;
         
@@ -106,7 +107,7 @@ impl<'info> InitializeGame<'info> {
 
         self.player_data.set_inner(PlayerData {
             role: None,
-            is_active: true,
+            is_eliminated: false,
             bump: bumps.player_data,
         });
 

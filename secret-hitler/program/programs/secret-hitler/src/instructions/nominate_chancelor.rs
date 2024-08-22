@@ -15,7 +15,7 @@ pub struct NominateChancellor<'info> {
             president.key().to_bytes().as_ref(),
             ],
         bump = player_data.bump,
-        constraint = player_data.is_active @GameErrorCode::InactivePlayer
+        constraint = !player_data.is_eliminated @GameErrorCode::EiminatedPlayer
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(
@@ -49,7 +49,7 @@ pub struct NominateChancellor<'info> {
 impl<'info> NominateChancellor<'info> {
     pub fn nominated_chancellor(
         &mut self,
-        nominated_chancellor_index: u8,
+        nominated_chancellor_index: usize,
         bumps: NominateChancellorBumps,
     ) -> Result<()> {
         let game = &mut self.game_data;
@@ -76,7 +76,7 @@ impl<'info> NominateChancellor<'info> {
                     .unwrap()
                     .eq(nominated_chancelor); //prev chancellor ineligible
 
-                match game.player_count <= 5 {
+                match game.active_player_count <= 5 {
                     true => result,
                     false => {
                         if prev_president.is_some() {
@@ -99,11 +99,11 @@ impl<'info> NominateChancellor<'info> {
 
         game.game_state = GameState::ChancellorVoting;
 
-        self.nomination.init(
-            nominated_chancellor_index,
-            self.game_data.current_president_index,
-            bumps.nomination,
-        )?;
+        self.nomination.voters_index = vec![self.game_data.current_president_index];
+        self.nomination.nominee_index = nominated_chancellor_index;
+        self.nomination.nein = 0;
+        self.nomination.ja = 1; // it is assumed the president votes ja by nominating
+        self.nomination.bump = bumps.nomination;
 
         Ok(())
     }

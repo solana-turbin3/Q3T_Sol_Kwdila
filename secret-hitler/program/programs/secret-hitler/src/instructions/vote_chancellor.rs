@@ -1,5 +1,3 @@
-use std::ops::{AddAssign, Div};
-
 use anchor_lang::prelude::*;
 
 use crate::state::{GameData, Nomination, PlayerData};
@@ -15,7 +13,7 @@ pub struct LeaveGame<'info> {
             player.key().to_bytes().as_ref()
         ],
         bump = player_data.bump,
-        constraint = player_data.is_active @GameErrorCode::InactivePlayer
+        constraint = !player_data.is_eliminated @GameErrorCode::EiminatedPlayer
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(
@@ -46,19 +44,23 @@ impl<'info> LeaveGame<'info> {
         let game = &mut self.game_data;
 
         match vote {
-            PlayerVote::Nein => nomination.nein.add_assign(1),
-            PlayerVote::Ja => nomination.ja.add_assign(1),
+            PlayerVote::Nein => nomination.nein += 1,
+            PlayerVote::Ja => nomination.ja += 1,
         }
 
         let total_votes = nomination.ja + nomination.nein;
         require!(
-            total_votes <= game.player_count,
+            total_votes <= game.active_player_count,
             GameErrorCode::MaxVotesReached
         );
 
-        if nomination.nein > game.player_count.div(2) - 1 {
+        if nomination.nein > game.active_player_count.div_ceil(2) - 1 {
             game.failed_elections += 1;
             game.game_state = GameState::ChancellorNomination
+        }
+
+        if nomination.ja > game.active_player_count.div_ceil(2) - 1 {
+            todo!() //TODO handle passing vote
         }
         Ok(())
     }

@@ -6,15 +6,17 @@ use crate::{constants::{NUM_FASCIST_POLICIES,NUM_LIBERAL_POLICIES}, enums::GameS
 pub struct GameData {
     pub host: Pubkey,
 
-    pub current_president_index: u8,
-    pub current_chancellor_index: Option<u8>,
-    pub previous_president_index: Option<u8>,
-    pub previous_chancellor_index: Option<u8>,
+    pub current_president_index: usize,
+    pub current_chancellor_index: Option<usize>,
+    pub previous_president_index: Option<usize>,
+    pub previous_chancellor_index: Option<usize>,
 
     pub vote_duration: i64,
     pub max_players: u8,
-    pub player_count: u8,
+
+    pub active_player_count: u8,
     pub players: Vec<Pubkey>,
+    pub turn_started_at: Option<i64>,
 
     pub entry_deposit: Option<u64>, // will be returned to everyone completing the game
     pub bet_amount: Option<u64>,    // will be devided between winners
@@ -54,7 +56,7 @@ impl GameData {
         game_data_bump: u8,
         deposit_vault_bump: Option<u8>,
         bet_vault_bump: Option<u8>,
-    ) {
+    ) -> Result<()>{
         self.host = host;
 
         self.current_president_index = 4;
@@ -64,8 +66,9 @@ impl GameData {
 
         self.vote_duration = vote_duration;
         self.max_players = max_players;
-        self.player_count = 1;
+        self.active_player_count = 1;
         self.players = vec![host];
+        self.turn_started_at = None;
 
         self.entry_deposit = entry_deposit;
         self.bet_amount = bet_amount;
@@ -78,6 +81,8 @@ impl GameData {
         self.bump = game_data_bump;
         self.deposit_vault_bump = deposit_vault_bump;
         self.bet_vault_bump = bet_vault_bump;
+
+        Ok(())
     }
 }
 

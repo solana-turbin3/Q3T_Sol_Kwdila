@@ -92,7 +92,7 @@ impl<'info> LeaveGame<'info> {
 
         self.game_data.players.swap_remove(index);
 
-        self.game_data.player_count -= 1;
+        self.game_data.active_player_count -= 1;
 
         todo!("handle Inactive Host player");
         todo!("");

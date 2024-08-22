@@ -1695,7 +1695,6 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "session-keys",
  "solana-program 2.0.4",
 ]
 
@@ -1774,37 +1773,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.70",
-]
-
-[[package]]
-name = "session-keys"
-version = "2.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d466b1bc1d114e4795ee81e65287737e4f0f8c32d3a4011a7fb498609ec7382"
-dependencies = [
- "anchor-lang",
- "session-keys-macros",
- "solana-security-txt",
-]
-
-[[package]]
-name = "session-keys-macros"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6349e5cb01c08d3b3efad6cad6c63d622b703603812258ba6741cbc2c62ca39d"
-dependencies = [
- "session-keys-macros-attribute",
-]
-
-[[package]]
-name = "session-keys-macros-attribute"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e07d122114bc5388a5440d62374b5b752f6013e270d100b479bb1b650d375d11"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]

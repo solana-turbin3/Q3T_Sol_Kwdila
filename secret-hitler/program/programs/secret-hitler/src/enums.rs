@@ -2,8 +2,9 @@ use anchor_lang::prelude::*;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, PartialEq, Eq)]
 pub enum GameState {
-    Setup,            // Game is being set up.
-    ChancellorVoting, // Voting on the chancellor is taking place.
+    Setup,                // Game is being set up.
+    ChancellorVoting,     // Voting on the chancellor is taking place.
+    ChancellorNomination, // President is nominating a chancellor.
 
     LegislativePresident, // In the legislative phase. The president is selecting a card to discard.
     LegislativeChancellor, // In the legislative phase. The chancellor is selecting a card to enact.
@@ -66,4 +67,10 @@ impl PlayerCount {
             PlayerCount::Ten => 4,
         }
     }
+}
+
+#[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerVote {
+    Nein,
+    Ja,
 }

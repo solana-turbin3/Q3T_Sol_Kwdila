@@ -11,6 +11,7 @@ pub struct GameData {
     pub previous_president_index: Option<u8>,
     pub previous_chancellor_index: Option<u8>,
 
+    pub vote_duration: i64,
     pub max_players: u8,
     pub player_count: u8,
     pub players: Vec<Pubkey>,
@@ -46,6 +47,7 @@ impl GameData {
     pub fn init(
         &mut self,
         host: Pubkey,
+        vote_duration: i64,
         max_players: u8,
         entry_deposit: Option<u64>,
         bet_amount: Option<u64>,
@@ -60,6 +62,7 @@ impl GameData {
         self.previous_president_index = None;
         self.previous_chancellor_index = None;
 
+        self.vote_duration = vote_duration;
         self.max_players = max_players;
         self.player_count = 1;
         self.players = vec![host];

@@ -3,10 +3,10 @@ use anchor_lang::{
     system_program::{transfer, Transfer},
 };
 
-use crate::{enums::GameState, errors::GameErrorCode};
+use crate::{GameState, GameErrorCode};
 use crate::state::{
-    game_data::GameData,
-    player_data::PlayerData,
+    GameData,
+    PlayerData,
 };
 
 #[derive(Accounts)]
@@ -67,7 +67,7 @@ impl<'info> JoinGame<'info> {
             Some(amount) => {
                 let accounts = Transfer {
                     from: self.player.to_account_info(),
-                    to: self.deposit_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
+                    to: self.deposit_vault.as_ref().ok_or(GameErrorCode::DepositVaultNotFound)?.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
@@ -80,7 +80,7 @@ impl<'info> JoinGame<'info> {
             Some(amount) => {
                 let accounts = Transfer {
                     from: self.player.to_account_info(),
-                    to: self.bet_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
+                    to: self.bet_vault.as_ref().ok_or(GameErrorCode::BetVaultNotFound)?.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
@@ -94,7 +94,7 @@ impl<'info> JoinGame<'info> {
 
         self.player_data.set_inner(PlayerData {
             role: None,
-            is_in_game: true,
+            is_active: true,
             bump: bumps.player_data,
         });
 

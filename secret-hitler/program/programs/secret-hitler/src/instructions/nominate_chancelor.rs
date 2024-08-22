@@ -15,7 +15,7 @@ pub struct NominateChancellor<'info> {
             president.key().to_bytes().as_ref(),
             ],
         bump = player_data.bump,
-        constraint = player_data.is_in_game @GameErrorCode::PlayerNotInGame
+        constraint = player_data.is_active @GameErrorCode::InactivePlayer
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(
@@ -40,7 +40,7 @@ pub struct NominateChancellor<'info> {
             game_data.players.get(game_data.current_president_index as usize).unwrap() // this is checked
         ) @GameErrorCode::PlayerNotInGame,
 
-        constraint = [GameState::Setup,GameState::PostLegislative].contains(&game_data.game_state) @GameErrorCode::InvalidGameState,
+        constraint = GameState::ChancellorNomination == game_data.game_state @GameErrorCode::InvalidGameState,
     )]
     pub game_data: Account<'info, GameData>,
     pub system_program: Program<'info, System>,
@@ -97,10 +97,13 @@ impl<'info> NominateChancellor<'info> {
             GameErrorCode::IneligibleChancellorNominated
         );
 
-        self.nomination
-            .init(nominated_chancellor_index, bumps.nomination);
-
         game.game_state = GameState::ChancellorVoting;
+
+        self.nomination.init(
+            nominated_chancellor_index,
+            self.game_data.current_president_index,
+            bumps.nomination,
+        );
 
         Ok(())
     }

@@ -3,8 +3,8 @@ use anchor_lang::{
     system_program::{transfer, Transfer},
 };
 
-use crate::state::{game_data::GameData, player_data::PlayerData};
-use crate::{enums::GameState, errors::GameErrorCode};
+use crate::state::{GameData, PlayerData};
+use crate::{GameErrorCode, GameState};
 
 #[derive(Accounts)]
 pub struct LeaveGame<'info> {
@@ -18,7 +18,6 @@ pub struct LeaveGame<'info> {
             player.key().to_bytes().as_ref()
         ],
         bump = player_data.bump,
-        constraint = player_data.is_in_game @GameErrorCode::PlayerNotInGame
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(

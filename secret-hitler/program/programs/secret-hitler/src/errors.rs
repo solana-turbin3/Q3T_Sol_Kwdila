@@ -20,4 +20,10 @@ pub enum GameErrorCode {
     MinimumPlayersNotReached,
     #[msg("The nominated chancellor is ineligible")]
     IneligibleChancellorNominated,
+    #[msg("Inactivated Player can not participate in game")]
+    InactivePlayer,
+    #[msg("Number of votes can not exceed player count")]
+    MaxVotesReached,
+    #[msg("Each Player can vote once per nomination")]
+    PlayerAlreadyVoted,
 }

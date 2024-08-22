@@ -63,9 +63,12 @@ impl<'info> InitializeGame<'info> {
         bumps: InitializeGameBumps,
     ) -> Result<()> {
         require!(max_players >= 5,GameErrorCode::MinimumPlayersNotReached);
+
+        let clock = Clock::get()?;
         
         self.game_data.init(
             self.host.key(),
+            clock.unix_timestamp,
             max_players,
             entry_deposit,
             bet_amount,
@@ -76,34 +79,34 @@ impl<'info> InitializeGame<'info> {
             
 
         match self.game_data.entry_deposit {
-            Some(deposit) => {
+            Some(amount) => {
                 let accounts = Transfer {
                     from: self.host.to_account_info(),
-                    to: self.deposit_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
+                    to: self.deposit_vault.as_ref().ok_or(GameErrorCode::DepositVaultNotFound)?.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-                transfer(ctx, deposit)?
+                transfer(ctx, amount)?
             },
             None => (),
         }
 
         match self.game_data.bet_amount {
-            Some(deposit) => {
+            Some(amount) => {
                 let accounts = Transfer {
                     from: self.host.to_account_info(),
-                    to: self.deposit_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
+                    to: self.bet_vault.as_ref().ok_or(GameErrorCode::BetVaultNotFound)?.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-                transfer(ctx, deposit)?
+                transfer(ctx, amount)?
             },
             None => (),
         }
 
         self.player_data.set_inner(PlayerData {
             role: None,
-            is_in_game: true,
+            is_active: true,
             bump: bumps.player_data,
         });
 

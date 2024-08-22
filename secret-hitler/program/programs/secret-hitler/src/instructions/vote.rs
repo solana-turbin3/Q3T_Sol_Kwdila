@@ -1,10 +1,10 @@
-use anchor_lang::{
-    prelude::*,
-    system_program::{transfer, Transfer},
-};
+use std::ops::{AddAssign, Div};
 
-use crate::state::{game_data::GameData, player_data::PlayerData};
-use crate::{enums::GameState, errors::GameErrorCode};
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::vote::state::Vote;
+
+use crate::state::{nomination, GameData, Nomination, PlayerData};
+use crate::{GameErrorCode, GameState, PlayerVote};
 
 #[derive(Accounts)]
 pub struct LeaveGame<'info> {
@@ -15,25 +15,19 @@ pub struct LeaveGame<'info> {
             game_data.key().to_bytes().as_ref(),
             player.key().to_bytes().as_ref()
         ],
-        bump = player_data.bump
+        bump = player_data.bump,
+        constraint = player_data.is_active @GameErrorCode::InactivePlayer
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(
-        seeds= [
-            b"deposit",
+        mut,
+        seeds =[
+            b"chancellor_nomination",
             game_data.key().to_bytes().as_ref()
-        ],
-        bump = game_data.deposit_vault_bump.unwrap(),
+            ],
+        bump = nomination.bump
     )]
-    pub deposit_vault: Option<SystemAccount<'info>>,
-    #[account(
-        seeds= [
-        b"deposit_vault",
-        game_data.key().to_bytes().as_ref()
-    ],
-        bump = game_data.bet_vault_bump.unwrap(),
-    )]
-    pub bet_vault: Option<SystemAccount<'info>>,
+    pub nomination: Account<'info, Nomination>,
     #[account(
         mut,
         seeds = [
@@ -41,57 +35,32 @@ pub struct LeaveGame<'info> {
             game_data.host.to_bytes().as_ref(),
         ],
         bump = game_data.bump,
-        constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
+        constraint = game_data.game_state == GameState::ChancellorVoting @GameErrorCode::InvalidGameState,
         constraint = game_data.players.contains(player.key) @GameErrorCode::PlayerNotInGame,
-        constraint = game_data.host.ne(player.key) @GameErrorCode::HostPlayerLeaving,
-        constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositVaultNotFound,
-        constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetVaultNotFound,
     )]
     pub game_data: Account<'info, GameData>,
-    pub system_program: Program<'info, System>,
 }
 
 impl<'info> LeaveGame<'info> {
-    pub fn remove_player(&mut self) -> Result<()> {
-        match self.game_data.entry_deposit {
-            Some(amount) => {
-                let accounts = Transfer {
-                    from: self.player.to_account_info(),
-                    to: self.deposit_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
-                };
+    pub fn vote(&mut self, vote: PlayerVote) -> Result<()> {
+        let nomination = &mut self.nomination;
+        let game = &mut self.game_data;
 
-                let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-
-                transfer(ctx, amount)?
-            }
-            None => (),
+        match vote {
+            PlayerVote::Nein => nomination.nein.add_assign(1),
+            PlayerVote::Ja => nomination.ja.add_assign(1),
         }
 
-        match self.game_data.bet_amount {
-            Some(amount) => {
-                let accounts = Transfer {
-                    from: self.player.to_account_info(),
-                    to: self.bet_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
-                };
+        let total_votes = nomination.ja + nomination.nein;
+        require!(
+            total_votes <= game.player_count,
+            GameErrorCode::MaxVotesReached
+        );
 
-                let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-
-                transfer(ctx, amount)?
-            }
-            None => (),
+        if nomination.nein > game.player_count.div(2) - 1 {
+            game.failed_elections += 1;
+            game.game_state = GameState::ChancellorNomination
         }
-
-        let index = self
-            .game_data
-            .players
-            .iter()
-            .position(|player| player == self.player.key)
-            .unwrap(); // this is checked in the game_data account constraints
-
-        self.game_data.players.swap_remove(index);
-
-        self.game_data.player_count -= 1;
-
         Ok(())
     }
 }

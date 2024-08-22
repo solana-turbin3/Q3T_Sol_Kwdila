@@ -94,6 +94,8 @@ impl<'info> LeaveGame<'info> {
 
         self.game_data.player_count -= 1;
 
+        todo!("handle Inactive Host player");
+        todo!("");
         Ok(())
     }
 }

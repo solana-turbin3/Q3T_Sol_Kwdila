@@ -1,9 +1,8 @@
 use std::ops::{AddAssign, Div};
 
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::vote::state::Vote;
 
-use crate::state::{nomination, GameData, Nomination, PlayerData};
+use crate::state::{GameData, Nomination, PlayerData};
 use crate::{GameErrorCode, GameState, PlayerVote};
 
 #[derive(Accounts)]

@@ -103,7 +103,7 @@ impl<'info> NominateChancellor<'info> {
             nominated_chancellor_index,
             self.game_data.current_president_index,
             bumps.nomination,
-        );
+        )?;
 
         Ok(())
     }

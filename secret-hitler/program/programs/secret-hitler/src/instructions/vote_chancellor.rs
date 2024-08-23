@@ -52,7 +52,7 @@ impl<'info> LeaveGame<'info> {
             .active_players
             .iter()
             .position(|key| key == self.player.key)
-            .ok_or(GameErrorCode::PlayerNotInGame)?;
+            .ok_or(GameErrorCode::PlayerNotInGame)? as u64;
 
         // make sure the player has not voted already
         require!(

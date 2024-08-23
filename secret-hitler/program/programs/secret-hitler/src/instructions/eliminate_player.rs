@@ -42,7 +42,7 @@ impl<'info> EliminatePlayer<'info> {
             GameErrorCode::TurnNotFinished
         );
 
-        let mut indices_to_remove: Vec<usize> = Vec::new();
+        let mut indices_to_remove: Vec<u64> = Vec::new();
         let current_government_indices = [
             Some(game.current_president_index),
             game.current_chancellor_index,
@@ -50,17 +50,18 @@ impl<'info> EliminatePlayer<'info> {
         let mut inactive_goverment = false;
 
         for (index, _) in game.active_players.iter().enumerate() {
-            if current_government_indices.contains(&Some(index)) {
+            let index_u64 = index as u64;
+            if current_government_indices.contains(&Some(index_u64)) {
                 inactive_goverment = true;
             }
-            if !voters.contains(&index) {
-                indices_to_remove.push(index);
+            if !voters.contains(&index_u64) {
+                indices_to_remove.push(index_u64);
             }
         }
 
         // Remove players in reverse order using the indices from indices_to_remove
         for index in indices_to_remove.iter().rev() {
-            self.game_data.active_players.remove(*index);
+            self.game_data.active_players.remove(*index as usize);
         }
 
         if inactive_goverment {

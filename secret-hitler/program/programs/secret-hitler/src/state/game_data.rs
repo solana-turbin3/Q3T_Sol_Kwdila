@@ -6,10 +6,10 @@ use crate::{constants::{NUM_FASCIST_POLICIES,NUM_LIBERAL_POLICIES}, enums::GameS
 pub struct GameData {
     pub host: Pubkey,
 
-    pub current_president_index: usize,
-    pub current_chancellor_index: Option<usize>,
-    pub previous_president_index: Option<usize>,
-    pub previous_chancellor_index: Option<usize>,
+    pub current_president_index: u64,
+    pub current_chancellor_index: Option<u64>,
+    pub previous_president_index: Option<u64>,
+    pub previous_chancellor_index: Option<u64>,
 
     pub turn_duration: i64,
     pub max_players: u8,
@@ -37,8 +37,8 @@ impl Space for GameData {
     + 32            // pubkey
     + 1 * 5         // u8
     + 4 + 32 * 10   // Vec<Pubkey>
-    + 9 * 2         // Option<u64>
-    + 9 * 3         // OPtion<usize>
+    + 9 * 5         // Option<u64>
+    + 8             // u64
     + 1             // GameState
     + 2 * 2         // Option<u8>
     ;
@@ -92,7 +92,7 @@ impl GameData {
 
     pub fn next_president(&mut self) {
         self.previous_president_index = Some(self.current_president_index);
-        let next_president = (self.current_president_index + 1) % self.active_players.len();
+        let next_president = (self.current_president_index + 1) % self.active_players.len() as u64;
         self.current_president_index = next_president;
     }
 }

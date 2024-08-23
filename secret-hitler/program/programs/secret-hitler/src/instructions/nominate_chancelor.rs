@@ -100,7 +100,7 @@ impl<'info> NominateChancellor<'info> {
         game.game_state = GameState::ChancellorVoting;
 
         self.nomination.voters_index = vec![self.game_data.current_president_index];
-        self.nomination.nominee_index = nominated_chancellor_index;
+        self.nomination.nominee_index = nominated_chancellor_index as u64;
         self.nomination.nein = 0;
         self.nomination.ja = 1; // it is assumed the president votes ja by nominating
         self.nomination.bump = bumps.nomination;

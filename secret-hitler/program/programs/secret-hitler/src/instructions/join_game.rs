@@ -53,8 +53,8 @@ pub struct JoinGame<'info> {
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
         constraint = !game_data.active_players.contains(player.key) @GameErrorCode::PlayerAlreadyJoined, 
         constraint = game_data.active_players.len() < game_data.max_players as usize @GameErrorCode::MaxPlayersReached,
-        constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositVaultNotFound,
-        constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetVaultNotFound,
+        constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,
+        constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetNotFound,
     )]
     pub game_data: Account<'info, GameData>,
     pub system_program: Program<'info, System>,
@@ -67,7 +67,7 @@ impl<'info> JoinGame<'info> {
             Some(amount) => {
                 let accounts = Transfer {
                     from: self.player.to_account_info(),
-                    to: self.deposit_vault.as_ref().ok_or(GameErrorCode::DepositVaultNotFound)?.to_account_info(), //this is checked in game_data account constraints
+                    to: self.deposit_vault.as_ref().ok_or(GameErrorCode::DepositNotFound)?.to_account_info(), // this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
@@ -80,7 +80,7 @@ impl<'info> JoinGame<'info> {
             Some(amount) => {
                 let accounts = Transfer {
                     from: self.player.to_account_info(),
-                    to: self.bet_vault.as_ref().ok_or(GameErrorCode::BetVaultNotFound)?.to_account_info(), //this is checked in game_data account constraints
+                    to: self.bet_vault.as_ref().ok_or(GameErrorCode::BetNotFound)?.to_account_info(), // this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);

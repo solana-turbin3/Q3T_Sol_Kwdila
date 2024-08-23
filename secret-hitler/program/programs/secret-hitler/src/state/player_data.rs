@@ -8,5 +8,5 @@ pub struct PlayerData {
 }
 
 impl Space for PlayerData {
-    const INIT_SPACE: usize = 8 + 33 + 1;
+    const INIT_SPACE: usize = 8 + 33 + 1 + 1;
 }

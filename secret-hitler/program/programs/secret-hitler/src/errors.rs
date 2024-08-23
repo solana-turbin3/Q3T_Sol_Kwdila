@@ -12,10 +12,10 @@ pub enum GameErrorCode {
     PlayerNotInGame,
     #[msg("Host Player Can not leave game. Consider ending game instead")]
     HostPlayerLeaving,
-    #[msg("Bet vault must be provided with bet amount")]
-    BetVaultNotFound,
-    #[msg("Deposit vault must be provided with deposit amount")]
-    DepositVaultNotFound,
+    #[msg("Bet vault account must be provided only if bet amount is provided")]
+    BetNotFound,
+    #[msg("Deposit vault acount must be provided only if deposit amount is provided")]
+    DepositNotFound,
     #[msg("5 to 10 players are needed to play")]
     MinimumPlayersNotReached,
     #[msg("The nominated chancellor is ineligible")]
@@ -30,4 +30,6 @@ pub enum GameErrorCode {
     TurnNotFinished,
     #[msg("Turn Duration needs to be atleast 60 seconds")]
     MinimumTurnDurationNotReached,
+    #[msg("Turn has already finished")]
+    TurnFinished,
 }

@@ -43,6 +43,16 @@ impl<'info> LeaveGame<'info> {
         let nomination = &mut self.nomination;
         let game = &mut self.game_data;
         let num_players = game.active_players.len() as u8;
+        let current_time = Clock::get()?.unix_timestamp;
+
+        require!(
+            current_time
+                - game
+                    .turn_started_at
+                    .ok_or(GameErrorCode::InvalidGameState)?
+                < game.turn_duration,
+            GameErrorCode::TurnFinished
+        );
 
         let total_votes = nomination.ja + nomination.nein;
         require!(total_votes <= num_players, GameErrorCode::MaxVotesReached);
@@ -67,13 +77,13 @@ impl<'info> LeaveGame<'info> {
 
         if nomination.nein > num_players.div_ceil(2) - 1 {
             game.failed_elections += 1;
-            game.game_state = GameState::ChancellorNomination
+            game.next_game_state(GameState::ChancellorNomination)?;
         }
 
         if nomination.ja > num_players.div_ceil(2) - 1 {
             game.previous_chancellor_index = game.current_chancellor_index;
             game.current_chancellor_index = Some(nomination.nominee_index);
-            game.game_state = GameState::LegislativePresident;
+            game.next_game_state(GameState::LegislativePresident)?;
         }
 
         Ok(())

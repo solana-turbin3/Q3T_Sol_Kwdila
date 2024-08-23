@@ -46,8 +46,8 @@ pub struct LeaveGame<'info> {
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
         constraint = game_data.active_players.contains(player.key) @GameErrorCode::PlayerNotInGame,
         constraint = game_data.host.ne(player.key) @GameErrorCode::HostPlayerLeaving,
-        constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositVaultNotFound,
-        constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetVaultNotFound,
+        constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,
+        constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetNotFound,
     )]
     pub game_data: Account<'info, GameData>,
     pub system_program: Program<'info, System>,
@@ -58,12 +58,15 @@ impl<'info> LeaveGame<'info> {
         match self.game_data.entry_deposit {
             Some(amount) => {
                 let accounts = Transfer {
-                    from: self.player.to_account_info(),
-                    to: self.deposit_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
+                    to: self.player.to_account_info(),
+                    from: self
+                        .deposit_vault
+                        .as_ref()
+                        .ok_or(GameErrorCode::DepositNotFound)?
+                        .to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-
                 transfer(ctx, amount)?
             }
             None => (),
@@ -72,12 +75,15 @@ impl<'info> LeaveGame<'info> {
         match self.game_data.bet_amount {
             Some(amount) => {
                 let accounts = Transfer {
-                    from: self.player.to_account_info(),
-                    to: self.bet_vault.as_ref().unwrap().to_account_info(), //this is checked in game_data account constraints
+                    to: self.player.to_account_info(),
+                    from: self
+                        .bet_vault
+                        .as_ref()
+                        .ok_or(GameErrorCode::BetNotFound)?
+                        .to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-
                 transfer(ctx, amount)?
             }
             None => (),
@@ -88,7 +94,7 @@ impl<'info> LeaveGame<'info> {
             .active_players
             .iter()
             .position(|player| player == self.player.key)
-            .unwrap(); // this is checked in the game_data account constraints
+            .ok_or(GameErrorCode::PlayerNotInGame)?; // this is checked in the game_data account constraints
 
         self.game_data.active_players.swap_remove(index);
 

@@ -11,11 +11,10 @@ pub struct GameData {
     pub previous_president_index: Option<usize>,
     pub previous_chancellor_index: Option<usize>,
 
-    pub vote_duration: i64,
+    pub turn_duration: i64,
     pub max_players: u8,
 
-    pub active_player_count: u8,
-    pub players: Vec<Pubkey>,
+    pub active_players: Vec<Pubkey>,
     pub turn_started_at: Option<i64>,
 
     pub entry_deposit: Option<u64>, // will be returned to everyone completing the game
@@ -36,11 +35,12 @@ impl Space for GameData {
     const INIT_SPACE: usize = 
     8               // anchor descriminator
     + 32            // pubkey
-    + 1 * 7         // u8
+    + 1 * 5         // u8
     + 4 + 32 * 10   // Vec<Pubkey>
-    + 9 * 5         // Option<u64>
+    + 9 * 2         // Option<u64>
+    + 9 * 3         // OPtion<usize>
     + 1             // GameState
-    + 2 * 5         // Option<u8>
+    + 2 * 2         // Option<u8>
     ;
 }
 
@@ -49,8 +49,8 @@ impl GameData {
     pub fn init(
         &mut self,
         host: Pubkey,
-        vote_duration: i64,
         max_players: u8,
+        turn_duration:i64,
         entry_deposit: Option<u64>,
         bet_amount: Option<u64>,
         game_data_bump: u8,
@@ -64,10 +64,9 @@ impl GameData {
         self.previous_president_index = None;
         self.previous_chancellor_index = None;
 
-        self.vote_duration = vote_duration;
+        self.turn_duration = turn_duration;
         self.max_players = max_players;
-        self.active_player_count = 1;
-        self.players = vec![host];
+        self.active_players = vec![host];
         self.turn_started_at = None;
 
         self.entry_deposit = entry_deposit;
@@ -83,6 +82,18 @@ impl GameData {
         self.bet_vault_bump = bet_vault_bump;
 
         Ok(())
+    }
+
+    pub fn reset_turn_timer(&mut self) -> Result<()>{
+        let clock = Clock::get()?;
+        self.turn_started_at = Some(clock.unix_timestamp);
+        Ok(())
+    }
+
+    pub fn next_president(&mut self) {
+        self.previous_president_index = Some(self.current_president_index);
+        let next_president = (self.current_president_index + 1) % self.active_players.len();
+        self.current_president_index = next_president;
     }
 }
 

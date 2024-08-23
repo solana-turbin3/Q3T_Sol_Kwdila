@@ -28,4 +28,6 @@ pub enum GameErrorCode {
     PlayerAlreadyVoted,
     #[msg("Wait for turn duration to finish")]
     TurnNotFinished,
+    #[msg("Turn Duration needs to be atleast 60 seconds")]
+    MinimumTurnDurationNotReached,
 }

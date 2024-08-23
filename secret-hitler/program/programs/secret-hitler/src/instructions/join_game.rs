@@ -51,8 +51,8 @@ pub struct JoinGame<'info> {
         bump = game_data.bump,
 
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
-        constraint = !game_data.players.contains(player.key) @GameErrorCode::PlayerAlreadyJoined, 
-        constraint = game_data.active_player_count < game_data.max_players @GameErrorCode::MaxPlayersReached,
+        constraint = !game_data.active_players.contains(player.key) @GameErrorCode::PlayerAlreadyJoined, 
+        constraint = game_data.active_players.len() < game_data.max_players as usize @GameErrorCode::MaxPlayersReached,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositVaultNotFound,
         constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetVaultNotFound,
     )]
@@ -89,8 +89,7 @@ impl<'info> JoinGame<'info> {
             None => (),
         }
 
-        self.game_data.players.push(self.player.key());
-        self.game_data.active_player_count += 1;
+        self.game_data.active_players.push(self.player.key());
 
         self.player_data.set_inner(PlayerData {
             role: None,

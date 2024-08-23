@@ -1,18 +1,16 @@
-use std::ops::Index;
-
 use anchor_lang::prelude::*;
 
 use crate::{
     state::{GameData, Nomination},
-    GameErrorCode, GameState,
+    GameErrorCode,
 };
 
 #[derive(Accounts)]
 pub struct EliminatePlayer<'info> {
+    // no need to check if they are in the game
     #[account(mut)]
     pub player: Signer<'info>,
     #[account(
-        mut,
         seeds =[
             b"chancellor_nomination",
             game_data.key().to_bytes().as_ref()
@@ -27,7 +25,6 @@ pub struct EliminatePlayer<'info> {
             game_data.host.to_bytes().as_ref(),
         ],
         bump = game_data.bump,
-        constraint = game_data.game_state == GameState::ChancellorVoting @GameErrorCode::InvalidGameState,
     )]
     pub game_data: Account<'info, GameData>,
 }
@@ -45,10 +42,36 @@ impl<'info> EliminatePlayer<'info> {
             GameErrorCode::TurnNotFinished
         );
 
-        for (index, player) in game.players.iter().enumerate() {
-            if !voters.contains(&index) {}
+        let mut indices_to_remove: Vec<usize> = Vec::new();
+        let current_government_indices = [
+            Some(game.current_president_index),
+            game.current_chancellor_index,
+        ];
+        let mut inactive_goverment = false;
+
+        for (index, _) in game.active_players.iter().enumerate() {
+            if current_government_indices.contains(&Some(index)) {
+                inactive_goverment = true;
+            }
+            if !voters.contains(&index) {
+                indices_to_remove.push(index);
+            }
         }
 
+        // Remove players in reverse order using the indices from indices_to_remove
+        for index in indices_to_remove.iter().rev() {
+            self.game_data.active_players.remove(*index);
+        }
+
+        if inactive_goverment {
+            self.update_goverment()
+        };
+
         Ok(())
+    }
+
+    pub fn update_goverment(&mut self) {
+        self.game_data.next_president();
+        self.game_data.current_chancellor_index = None;
     }
 }

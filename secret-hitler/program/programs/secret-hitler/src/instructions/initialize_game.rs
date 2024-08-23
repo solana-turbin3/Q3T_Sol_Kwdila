@@ -58,25 +58,25 @@ impl<'info> InitializeGame<'info> {
     pub fn init_game(
         &mut self,
         max_players: u8,
+        turn_duration:i64,
         entry_deposit: Option<u64>,
         bet_amount: Option<u64>,
         bumps: InitializeGameBumps,
     ) -> Result<()> {
         require!(max_players >= MIN_PLAYERS,GameErrorCode::MinimumPlayersNotReached);
         require!(max_players <= MAX_PLAYERS,GameErrorCode::MaxPlayersReached);
-
-        let clock = Clock::get()?;
+        require!(turn_duration >= 60,GameErrorCode::MinimumTurnDurationNotReached);
         
         self.game_data.init(
             self.host.key(),
-            clock.unix_timestamp,
             max_players,
+            turn_duration,
             entry_deposit,
             bet_amount,
             bumps.game_data,
             bumps.deposit_vault,
             bumps.bet_vault
-        );
+        )?;
             
 
         match self.game_data.entry_deposit {

@@ -44,7 +44,7 @@ pub struct LeaveGame<'info> {
         ],
         bump = game_data.bump,
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
-        constraint = game_data.players.contains(player.key) @GameErrorCode::PlayerNotInGame,
+        constraint = game_data.active_players.contains(player.key) @GameErrorCode::PlayerNotInGame,
         constraint = game_data.host.ne(player.key) @GameErrorCode::HostPlayerLeaving,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositVaultNotFound,
         constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetVaultNotFound,
@@ -85,17 +85,13 @@ impl<'info> LeaveGame<'info> {
 
         let index = self
             .game_data
-            .players
+            .active_players
             .iter()
             .position(|player| player == self.player.key)
             .unwrap(); // this is checked in the game_data account constraints
 
-        self.game_data.players.swap_remove(index);
+        self.game_data.active_players.swap_remove(index);
 
-        self.game_data.active_player_count -= 1;
-
-        todo!("handle Inactive Host player");
-        todo!("");
         Ok(())
     }
 }

@@ -37,7 +37,7 @@ pub struct NominateChancellor<'info> {
         bump = game_data.bump,
 
         constraint = president.key().eq(
-            game_data.players.get(game_data.current_president_index as usize).unwrap() // this is checked
+            game_data.active_players.get(game_data.current_president_index as usize).unwrap() // this is checked
         ) @GameErrorCode::PlayerNotInGame,
 
         constraint = GameState::ChancellorNomination == game_data.game_state @GameErrorCode::InvalidGameState,
@@ -59,7 +59,7 @@ impl<'info> NominateChancellor<'info> {
         );
 
         let nominated_chancelor = game
-            .players
+            .active_players
             .get(nominated_chancellor_index as usize)
             .unwrap();
 
@@ -71,17 +71,17 @@ impl<'info> NominateChancellor<'info> {
                 let prev_chancellor_index = game.previous_chancellor_index.unwrap();
 
                 let mut result = game
-                    .players
+                    .active_players
                     .get(prev_chancellor_index as usize)
                     .unwrap()
                     .eq(nominated_chancelor); //prev chancellor ineligible
 
-                match game.active_player_count <= 5 {
+                match game.active_players.len() <= 5 {
                     true => result,
                     false => {
                         if prev_president.is_some() {
                             result &= game
-                                .players
+                                .active_players
                                 .get(prev_president.unwrap() as usize)
                                 .unwrap()
                                 .eq(nominated_chancelor) //prev president ineligible

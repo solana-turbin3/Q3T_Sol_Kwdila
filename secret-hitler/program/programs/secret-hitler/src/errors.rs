@@ -10,8 +10,8 @@ pub enum GameErrorCode {
     MaxPlayersReached,
     #[msg("The specified player/pubkey is not in the game")]
     PlayerNotInGame,
-    #[msg("Host Player Can not leave game. Consider ending game instead")]
-    HostPlayerLeaving,
+    #[msg("The last player(host) Can not leave the game. Consider ending the game instead")]
+    LastPlayerLeaving,
     #[msg("Bet vault account must be provided only if bet amount is provided")]
     BetNotFound,
     #[msg("Deposit vault acount must be provided only if deposit amount is provided")]

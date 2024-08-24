@@ -43,9 +43,10 @@ pub struct LeaveGame<'info> {
             game_data.host.to_bytes().as_ref(),
         ],
         bump = game_data.bump,
+        // constraint = game_data.host.ne(player.key) @GameErrorCode::HostPlayerLeaving,
+        constraint = game_data.active_players.len() > 1 @GameErrorCode::LastPlayerLeaving, // You have to close game if you are the last person (host)
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
         constraint = game_data.active_players.contains(player.key) @GameErrorCode::PlayerNotInGame,
-        constraint = game_data.host.ne(player.key) @GameErrorCode::HostPlayerLeaving,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,
         constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetNotFound,
     )]
@@ -97,6 +98,11 @@ impl<'info> LeaveGame<'info> {
             .ok_or(GameErrorCode::PlayerNotInGame)?; // this is checked in the game_data account constraints
 
         self.game_data.active_players.swap_remove(index);
+
+        // handle host player leaving
+        if self.player.key() == self.game_data.host {
+            self.game_data.host = self.game_data.active_players[0];
+        }
 
         Ok(())
     }

@@ -44,7 +44,6 @@ impl Space for GameData {
     ;
 }
 
-
 impl GameData {
     pub fn init(
         &mut self,

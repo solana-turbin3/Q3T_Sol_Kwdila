@@ -30,7 +30,7 @@ pub struct JoinGame<'info> {
             b"deposit_vault",
             game_data.key().to_bytes().as_ref()
         ],
-        bump = game_data.deposit_vault_bump.unwrap(),
+        bump = game_data.deposit_vault_bump.ok_or(GameErrorCode::DepositNotFound)?,
     )]
     pub deposit_vault: Option<SystemAccount<'info>>,
     #[account(
@@ -38,7 +38,7 @@ pub struct JoinGame<'info> {
         b"deposit_vault",
         game_data.key().to_bytes().as_ref()
     ],
-        bump = game_data.bet_vault_bump.unwrap(),
+        bump = game_data.bet_vault_bump.ok_or(GameErrorCode::BetNotFound)?,
     )]
     pub bet_vault: Option<SystemAccount<'info>>,
 

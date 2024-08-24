@@ -34,7 +34,6 @@ impl<'info> EliminatePlayer<'info> {
         let voters = &self.nomination.voters_index;
 
         let current_time = Clock::get()?.unix_timestamp;
-
         let turn_start_time = game.turn_started_at.ok_or(GameErrorCode::TurnNotFinished)?;
 
         require!(

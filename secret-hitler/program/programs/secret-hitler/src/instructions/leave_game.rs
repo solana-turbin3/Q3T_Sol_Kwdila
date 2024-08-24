@@ -25,7 +25,7 @@ pub struct LeaveGame<'info> {
             b"deposit",
             game_data.key().to_bytes().as_ref()
         ],
-        bump = game_data.deposit_vault_bump.unwrap(),
+        bump = game_data.deposit_vault_bump.ok_or(GameErrorCode::DepositNotFound)?,
     )]
     pub deposit_vault: Option<SystemAccount<'info>>,
     #[account(
@@ -33,7 +33,7 @@ pub struct LeaveGame<'info> {
         b"deposit_vault",
         game_data.key().to_bytes().as_ref()
     ],
-        bump = game_data.bet_vault_bump.unwrap(),
+        bump = game_data.bet_vault_bump.ok_or(GameErrorCode::BetNotFound)?,
     )]
     pub bet_vault: Option<SystemAccount<'info>>,
     #[account(
@@ -43,8 +43,8 @@ pub struct LeaveGame<'info> {
             game_data.host.to_bytes().as_ref(),
         ],
         bump = game_data.bump,
-        // constraint = game_data.host.ne(player.key) @GameErrorCode::HostPlayerLeaving,
-        constraint = game_data.active_players.len() > 1 @GameErrorCode::LastPlayerLeaving, // You have to close game if you are the last person (host)
+        // You have to close game if you are the last person (host)
+        constraint = game_data.active_players.len() > 1 @GameErrorCode::LastPlayerLeaving, 
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
         constraint = game_data.active_players.contains(player.key) @GameErrorCode::PlayerNotInGame,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,

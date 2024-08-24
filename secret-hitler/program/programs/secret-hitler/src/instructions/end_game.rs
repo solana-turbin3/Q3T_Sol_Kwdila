@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, system_program::{transfer, Transfer}};
 
-use crate::{state::{ GameData, PlayerData}, GameErrorCode, GameState};
+use crate::{state::{ GameData, PlayerData}, GameErrorCode};
 
 #[derive(Accounts)]
 pub struct EndGame<'info> {
@@ -14,7 +14,7 @@ pub struct EndGame<'info> {
             host.key().to_bytes().as_ref()
         ],
         bump=game_data.bump,
-        constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
+        // constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
         constraint = game_data.active_players.len() == 1, //only the last player(host) can end the game
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,
         constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetNotFound,
@@ -50,35 +50,34 @@ pub struct EndGame<'info> {
 impl<'info> EndGame<'info> {
     pub fn refund_host(&mut self) ->Result<()>{
         match self.game_data.entry_deposit {
-            Some(amount) => {
+            Some(_amount) => {
+                let vault = self.deposit_vault
+                .as_ref()
+                .ok_or(GameErrorCode::DepositNotFound)?;
                 let accounts = Transfer {
                     to: self.host.to_account_info(),
-                    from: self
-                        .deposit_vault
-                        .as_ref()
-                        .ok_or(GameErrorCode::DepositNotFound)?
-                        .to_account_info(), //this is checked in game_data account constraints
+                    from: vault.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-                transfer(ctx, amount)?
+                transfer(ctx, vault.lamports())?
             }
             None => (),
         }
 
         match self.game_data.bet_amount {
-            Some(amount) => {
+            Some(_amount) => {
+                let vault = self.bet_vault
+                        .as_ref()
+                        .ok_or(GameErrorCode::BetNotFound)?;
                 let accounts = Transfer {
                     to: self.host.to_account_info(),
-                    from: self
-                        .bet_vault
-                        .as_ref()
-                        .ok_or(GameErrorCode::BetNotFound)?
-                        .to_account_info(), //this is checked in game_data account constraints
+                    from: 
+                        vault.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
-                transfer(ctx, amount)?
+                transfer(ctx, vault.lamports())?
             }
             None => (),
         }

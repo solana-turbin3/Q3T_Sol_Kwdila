@@ -31,7 +31,7 @@ pub struct StartGame<'info> {
 impl<'info> StartGame<'info> {
     pub fn start(&mut self) ->Result<()>{
         let game = &mut self.game_data;
-        game.next_game_state(GameState::ChancellorNomination)?;
+        game.next_turn(GameState::ChancellorNomination)?;
 
         Ok(())
     }

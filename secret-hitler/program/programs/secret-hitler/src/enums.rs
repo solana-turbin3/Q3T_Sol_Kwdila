@@ -74,3 +74,9 @@ pub enum PlayerVote {
     Nein,
     Ja,
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub enum PolicyCard {
+    Fascist,
+    Liberal,
+}

@@ -77,13 +77,13 @@ impl<'info> LeaveGame<'info> {
 
         if nomination.nein > num_players.div_ceil(2) - 1 {
             game.failed_elections += 1;
-            game.next_game_state(GameState::ChancellorNomination)?;
+            game.next_turn(GameState::ChancellorNomination)?;
         }
 
         if nomination.ja > num_players.div_ceil(2) - 1 {
             game.previous_chancellor_index = game.current_chancellor_index;
             game.current_chancellor_index = Some(nomination.nominee_index);
-            game.next_game_state(GameState::LegislativePresident)?;
+            game.next_turn(GameState::LegislativePresident)?;
         }
 
         Ok(())

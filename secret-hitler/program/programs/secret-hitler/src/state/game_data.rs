@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{constants::{NUM_FASCIST_POLICIES,NUM_LIBERAL_POLICIES}, enums::GameState};
+use crate::{constants::{NUM_FASCIST_POLICIES,NUM_LIBERAL_POLICIES}, enums::GameState, PolicyCard};
 
 #[account]
 pub struct GameData {
@@ -15,8 +15,8 @@ pub struct GameData {
     pub active_players: Vec<Pubkey>,
     pub turn_started_at: Option<i64>,
     pub game_state: GameState,
-    pub libral_cards_left: u8,
-    pub fascist_cards_left: u8,
+    pub fascist_policies_enacted: u8,
+    pub liberal_policies_enacted: u8,
     pub failed_elections: u8,
 
     pub current_president_index: u64,
@@ -72,8 +72,8 @@ impl GameData {
         self.bet_amount = bet_amount;
 
         self.game_state = GameState::Setup;
-        self.libral_cards_left = NUM_LIBERAL_POLICIES;
-        self.fascist_cards_left = NUM_FASCIST_POLICIES;
+        self.fascist_policies_enacted = 0;
+        self.liberal_policies_enacted = 0;
         self.failed_elections = 0;
 
         self.bump = game_data_bump;
@@ -83,7 +83,7 @@ impl GameData {
         Ok(())
     }
 
-    pub fn next_game_state(&mut self, state: GameState) -> Result<()>{
+    pub fn next_turn(&mut self, state: GameState) -> Result<()>{
         let clock = Clock::get()?;
         self.turn_started_at = Some(clock.unix_timestamp);
         self.game_state = state;

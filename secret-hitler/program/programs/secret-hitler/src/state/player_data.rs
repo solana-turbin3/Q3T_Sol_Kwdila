@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct PlayerData {
-    pub role: Option<[u8; 32]>, //hashed role
+    pub role: Option<[u8; 32]>, //hashed role liberal,hitler,fascist
     pub is_eliminated: bool,
     pub bump: u8,
 }

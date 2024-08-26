@@ -32,4 +32,10 @@ pub enum GameErrorCode {
     MinimumTurnDurationNotReached,
     #[msg("Turn has already finished")]
     TurnFinished,
+    #[msg("The president enacting policy needs LegistlativePresident State")]
+    PresidentPolicyError,
+    #[msg("The Chancellor enacting policy needs LegistlativeChancellor State and PolivyCard")]
+    ChancellorPolicyError,
+    #[msg("the player needs to be a chancellor or president")]
+    PlayerNotInGovernment,
 }

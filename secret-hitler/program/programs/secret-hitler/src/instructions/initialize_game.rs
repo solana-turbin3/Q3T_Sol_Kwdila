@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, system_program::{Transfer,transfer}};
 
-use crate::{constants::{MAX_PLAYERS, MIN_PLAYERS}, state::{game_data::GameData, player_data::PlayerData}, GameErrorCode};
+use crate::{constants::{MAX_PLAYERS, MINI_TURN_DURATION, MIN_PLAYERS}, state::{game_data::GameData, player_data::PlayerData}, GameErrorCode};
 
 #[derive(Accounts)]
 pub struct InitializeGame<'info> {
@@ -66,7 +66,7 @@ impl<'info> InitializeGame<'info> {
     ) -> Result<()> {
         require!(max_players >= MIN_PLAYERS,GameErrorCode::MinimumPlayersNotReached);
         require!(max_players <= MAX_PLAYERS,GameErrorCode::MaxPlayersReached);
-        require!(turn_duration >= 60,GameErrorCode::MinimumTurnDurationNotReached);
+        require!(turn_duration >= MINI_TURN_DURATION,GameErrorCode::MinimumTurnDurationNotReached);
 
         require!(
         entry_deposit.is_some() == self.deposit_vault.is_some(),

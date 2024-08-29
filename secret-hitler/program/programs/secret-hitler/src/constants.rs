@@ -4,6 +4,10 @@ use anchor_lang::constant;
 pub const NUM_FASCIST_POLICIES: u8 = 11;
 #[constant]
 pub const NUM_LIBERAL_POLICIES: u8 = 6;
+#[constant]
+pub const LIBERAL_VICTORY_POLICIES: u8 = 5;
+#[constant]
+pub const FASCIST_VICTORY_POLICIES: u8 = 6;
 
 #[constant]
 pub const MIN_PLAYERS: u8 = 5;

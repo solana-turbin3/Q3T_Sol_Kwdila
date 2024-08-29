@@ -14,6 +14,7 @@ pub struct LeaveGame<'info> {
         mut,
         close=player,
         seeds = [
+            b"player_data",
             game_data.key().to_bytes().as_ref(),
             player.key().to_bytes().as_ref()
         ],
@@ -46,7 +47,7 @@ pub struct LeaveGame<'info> {
         // You have to close game if you are the last person (host)
         constraint = game_data.active_players.len() > 1 @GameErrorCode::LastPlayerLeaving, 
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
-        constraint = game_data.active_players.contains(player.key) @GameErrorCode::PlayerNotInGame,
+        constraint = game_data.is_in_game(player.key) @GameErrorCode::PlayerNotInGame,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,
         constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetNotFound,
     )]

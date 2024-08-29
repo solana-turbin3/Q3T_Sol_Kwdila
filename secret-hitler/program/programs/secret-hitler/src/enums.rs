@@ -34,7 +34,7 @@ pub enum PlayerCount {
 }
 
 impl PlayerCount {
-    pub fn from(&self, player_count: u8) -> Option<PlayerCount> {
+    pub fn from(player_count: u8) -> Option<PlayerCount> {
         match player_count {
             5 => Some(PlayerCount::Five),
             6 => Some(PlayerCount::Six),
@@ -45,7 +45,6 @@ impl PlayerCount {
             _ => None,
         }
     }
-
     pub fn liberal_count(&self) -> u8 {
         match self {
             PlayerCount::Five => 3,
@@ -74,9 +73,14 @@ pub enum PlayerVote {
     Nein,
     Ja,
 }
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
 pub enum PolicyCard {
     Fascist,
     Liberal,
+}
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
+pub enum FascistBoard {
+    FiveToSix,
+    SevenToEight,
+    NineToTen,
 }

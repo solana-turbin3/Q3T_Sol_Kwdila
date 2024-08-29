@@ -1,21 +1,12 @@
 use anchor_lang::prelude::*;
 
-use crate::state::{GameData, Nomination, PlayerData};
+use crate::state::{GameData, Nomination};
 use crate::{GameErrorCode, GameState, PlayerVote};
 
 #[derive(Accounts)]
 pub struct LeaveGame<'info> {
     #[account(mut)]
     pub player: Signer<'info>,
-    #[account(
-        seeds = [
-            game_data.key().to_bytes().as_ref(),
-            player.key().to_bytes().as_ref()
-        ],
-        bump = player_data.bump,
-        constraint = !player_data.is_eliminated @GameErrorCode::EiminatedPlayer,
-    )]
-    pub player_data: Account<'info, PlayerData>,
     #[account(
         mut,
         seeds =[

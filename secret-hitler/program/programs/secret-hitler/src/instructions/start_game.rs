@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{constants::MIN_PLAYERS, state::{ GameData, PlayerData}, GameErrorCode, GameState};
+use crate::{constants::MIN_PLAYERS, state::GameData, GameErrorCode, GameState, PlayerCount};
 
 #[derive(Accounts)]
 pub struct StartGame<'info> {
@@ -17,20 +17,12 @@ pub struct StartGame<'info> {
         constraint = game_data.active_players.len() >= MIN_PLAYERS as usize, //minimum players to play
     )]
     pub game_data: Account<'info, GameData>,
-    #[account(
-        seeds = [            
-            game_data.key().to_bytes().as_ref(),
-            host.key().to_bytes().as_ref()
-        ],
-        bump = player_data.bump,
-        constraint = !player_data.is_eliminated @GameErrorCode::EiminatedPlayer //TODO there must be no inactive host 
-    )]
-    pub player_data: Account<'info, PlayerData>,
 }
 
 impl<'info> StartGame<'info> {
-    pub fn start(&mut self) ->Result<()>{
+    pub fn start(&mut self) -> Result<()> {
         let game = &mut self.game_data;
+        game.start_player_count = PlayerCount::from(game.active_players.len() as u8);
         game.next_turn(GameState::ChancellorNomination)?;
 
         Ok(())

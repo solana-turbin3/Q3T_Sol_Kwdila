@@ -2,7 +2,8 @@ use anchor_lang::prelude::*;
 
 use crate::{
     state::{GameData, Nomination},
-    GameErrorCode,
+    GameErrorCode, GameState,
+    GameState::*,
 };
 
 #[derive(Accounts)]
@@ -25,6 +26,8 @@ pub struct EliminatePlayer<'info> {
             game_data.host.to_bytes().as_ref(),
         ],
         bump = game_data.bump,
+        constraint = ![FascistVictoryElection,FascistVictoryPolicy,LiberalVictoryExecution,LiberalVictoryPolicy,Setup]
+            .contains(&game_data.game_state) @GameErrorCode::InvalidGameState,
     )]
     pub game_data: Account<'info, GameData>,
 }
@@ -34,7 +37,9 @@ impl<'info> EliminatePlayer<'info> {
         let voters = &self.nomination.voters_index;
 
         let current_time = Clock::get()?.unix_timestamp;
-        let turn_start_time = game.turn_started_at.ok_or(GameErrorCode::TurnNotFinished)?;
+        let turn_start_time = game
+            .turn_started_at
+            .ok_or(GameErrorCode::InvalidGameState)?;
 
         require!(
             current_time - turn_start_time > 0,
@@ -50,6 +55,7 @@ impl<'info> EliminatePlayer<'info> {
 
         for (index, _) in game.active_players.iter().enumerate() {
             let index_u64 = index as u64;
+
             if current_government_indices.contains(&Some(index_u64)) {
                 inactive_goverment = true;
             }
@@ -58,13 +64,14 @@ impl<'info> EliminatePlayer<'info> {
             }
         }
 
-        // Remove players in reverse order using the indices from indices_to_remove
+        // Remove players in reverse order to avoid shifting errors
         for index in indices_to_remove.iter().rev() {
             self.game_data.active_players.remove(*index as usize);
         }
 
         if inactive_goverment {
-            self.update_goverment()
+            self.update_goverment();
+            self.game_data.next_turn(GameState::ChancellorNomination)?;
         };
 
         Ok(())

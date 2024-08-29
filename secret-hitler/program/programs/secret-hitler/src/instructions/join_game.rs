@@ -26,6 +26,7 @@ pub struct JoinGame<'info> {
     )]
     pub player_data: Account<'info, PlayerData>,
     #[account(
+        mut,
         seeds= [
             b"deposit_vault",
             game_data.key().to_bytes().as_ref()
@@ -34,6 +35,7 @@ pub struct JoinGame<'info> {
     )]
     pub deposit_vault: Option<SystemAccount<'info>>,
     #[account(
+        mut,
         seeds= [
         b"deposit_vault",
         game_data.key().to_bytes().as_ref()
@@ -51,7 +53,7 @@ pub struct JoinGame<'info> {
         bump = game_data.bump,
 
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
-        constraint = !game_data.active_players.contains(player.key) @GameErrorCode::PlayerAlreadyJoined, 
+        constraint = !game_data.is_in_game(player.key) @GameErrorCode::PlayerAlreadyJoined, 
         constraint = game_data.active_players.len() < game_data.max_players as usize @GameErrorCode::MaxPlayersReached,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,
         constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetNotFound,
@@ -93,7 +95,6 @@ impl<'info> JoinGame<'info> {
 
         self.player_data.set_inner(PlayerData {
             role: None,
-            is_eliminated: false,
             bump: bumps.player_data,
         });
 

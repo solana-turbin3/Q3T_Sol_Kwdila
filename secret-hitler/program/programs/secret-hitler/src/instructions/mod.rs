@@ -1,3 +1,4 @@
+pub mod chancellor_veto;
 pub mod eliminate_player;
 pub mod enact_policy;
 pub mod end_game;
@@ -8,6 +9,7 @@ pub mod nominate_chancelor;
 pub mod start_game;
 pub mod vote_chancellor;
 
+pub use chancellor_veto::*;
 pub use eliminate_player::*;
 pub use enact_policy::*;
 pub use end_game::*;

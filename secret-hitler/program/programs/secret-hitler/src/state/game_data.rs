@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{constants::{NUM_FASCIST_POLICIES,NUM_LIBERAL_POLICIES}, enums::GameState, PolicyCard};
+use crate::{GameErrorCode, GameState, PlayerCount};
 
 #[account]
 pub struct GameData {
@@ -10,9 +10,11 @@ pub struct GameData {
     pub max_players: u8,
     pub entry_deposit: Option<u64>, // returned to everyone completing the game
     pub bet_amount: Option<u64>,    // devided between winners
+    pub start_player_count: Option<PlayerCount>,
 
     // these change during the game
     pub active_players: Vec<Pubkey>,
+    pub eliminated_players: Vec<Pubkey>,
     pub turn_started_at: Option<i64>,
     pub game_state: GameState,
     pub fascist_policies_enacted: u8,
@@ -22,6 +24,7 @@ pub struct GameData {
     pub current_president_index: u64,
     pub previous_president_index: Option<u64>,
     pub current_chancellor_index: Option<u64>,
+    pub special_election_president: Option<Pubkey>,
     pub previous_chancellor_index: Option<u64>,
 
     //bumps
@@ -34,13 +37,16 @@ pub struct GameData {
 impl Space for GameData {
     const INIT_SPACE: usize = 
     8               // anchor descriminator
-    + 32            // pubkey
+    + 32            // Pubkey
+    + 33            // Option<Pubkey>
     + 4 + 32 * 10   // Vec<Pubkey>
-    + 9 * 4         // Option<u64/i64>
+    + 4 + 32 * 2    // Vec<Pubkey>
+    + 9 * 6         // Option<u64/i64>
     + 2 * 2         // Option<u8>
     + 8             // u64
-    + 1 * 4         // u8
+    + 1 * 5         // u8
     + 1             // GameState
+    + 1             // PlayerCount
     ;
 }
 
@@ -58,6 +64,7 @@ impl GameData {
     ) -> Result<()>{
         self.host = host;
 
+        self.special_election_president = None;
         self.current_president_index = 4;
         self.current_chancellor_index = None;
         self.previous_president_index = None;
@@ -66,7 +73,9 @@ impl GameData {
         self.turn_duration = turn_duration;
         self.max_players = max_players;
         self.active_players = vec![host];
+        self.eliminated_players = Vec::new();
         self.turn_started_at = None;
+        self.start_player_count = None;
 
         self.entry_deposit = entry_deposit;
         self.bet_amount = bet_amount;
@@ -92,8 +101,24 @@ impl GameData {
 
     pub fn next_president(&mut self) {
         self.previous_president_index = Some(self.current_president_index);
-        let next_president = (self.current_president_index + 1) % self.active_players.len() as u64;
-        self.current_president_index = next_president;
+        self.current_president_index = (self.current_president_index + 1) % self.active_players.len() as u64;
+    }
+
+    pub fn is_in_game(&self, player_key: &Pubkey) -> bool { 
+        self.active_players.contains(player_key)
+    }
+
+    pub fn is_president(&self, player_key: &Pubkey) -> bool {
+        self.active_players
+        .get(self.current_president_index as usize)
+        .map_or(false, |current_president| {
+            player_key == current_president
+        })
+    }
+    pub fn is_chancellor(&self, player_key: &Pubkey) -> bool {
+        self.current_chancellor_index
+        .and_then(|index| self.active_players.get(index as usize))
+        .map_or(false, |chancellor| player_key == chancellor)
     }
 }
 

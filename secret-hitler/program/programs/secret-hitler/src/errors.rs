@@ -38,4 +38,10 @@ pub enum GameErrorCode {
     ChancellorPolicyError,
     #[msg("the player needs to be a chancellor or president")]
     PlayerNotInGovernment,
+    #[msg("Player is not the current president")]
+    PresidentRoleRequired,
+    #[msg("The previous president index was ot found in game_data")]
+    PrevPresidentNotFound,
+    #[msg("The previous chancellor index was ot found in game_data")]
+    PrevChancellorNotFound,
 }

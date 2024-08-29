@@ -8,6 +8,7 @@ pub struct InitializeGame<'info> {
     pub host: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [
             b"deposit_vault",
             game_data.key().to_bytes().as_ref()
@@ -16,7 +17,8 @@ pub struct InitializeGame<'info> {
     )]
     pub deposit_vault: Option<SystemAccount<'info>>,
 
-        #[account(
+    #[account(
+        mut,
         seeds = [
             b"bet_vault",
             game_data.key().to_bytes().as_ref()
@@ -29,7 +31,8 @@ pub struct InitializeGame<'info> {
         init,
         payer = host,
         space = PlayerData::INIT_SPACE,
-        seeds = [            
+        seeds = [     
+            b"player_data",       
             game_data.key().to_bytes().as_ref(),
             host.key().to_bytes().as_ref()
         ],
@@ -46,8 +49,6 @@ pub struct InitializeGame<'info> {
             host.key().to_bytes().as_ref()
         ],
         bump,
-        constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,
-        constraint = game_data.bet_amount.is_some() == bet_vault.is_some() @GameErrorCode::BetNotFound,
     )]
     pub game_data: Account<'info, GameData>,
 
@@ -66,6 +67,15 @@ impl<'info> InitializeGame<'info> {
         require!(max_players >= MIN_PLAYERS,GameErrorCode::MinimumPlayersNotReached);
         require!(max_players <= MAX_PLAYERS,GameErrorCode::MaxPlayersReached);
         require!(turn_duration >= 60,GameErrorCode::MinimumTurnDurationNotReached);
+
+        require!(
+        entry_deposit.is_some() == self.deposit_vault.is_some(),
+        GameErrorCode::DepositNotFound
+        );
+        require!(
+            bet_amount.is_some() == self.bet_vault.is_some(),
+            GameErrorCode::BetNotFound
+        );
         
         self.game_data.init(
             self.host.key(),
@@ -107,7 +117,6 @@ impl<'info> InitializeGame<'info> {
 
         self.player_data.set_inner(PlayerData {
             role: None,
-            is_eliminated: false,
             bump: bumps.player_data,
         });
 

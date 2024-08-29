@@ -37,7 +37,10 @@ pub struct EndGame<'info> {
     )]
     pub bet_vault: Option<SystemAccount<'info>>,
     #[account(
-        seeds = [            
+        mut,
+        close = host,
+        seeds = [  
+            b"player_data",
             game_data.key().to_bytes().as_ref(),
             host.key().to_bytes().as_ref()
         ],

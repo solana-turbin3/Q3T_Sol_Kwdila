@@ -71,7 +71,7 @@ impl<'info> EnactPolicy<'info> {
                 }
 
                 if game.liberal_policies_enacted == LIBERAL_VICTORY_POLICIES {
-                    game.next_turn(GameState::LiberalVictoryPolicy)?;
+                    game.game_state = GameState::LiberalVictoryPolicy;
                     return Ok(());
                 }
                 if game.fascist_policies_enacted == 0 {
@@ -80,7 +80,7 @@ impl<'info> EnactPolicy<'info> {
                     return Ok(());
                 }
                 if game.fascist_policies_enacted == FASCIST_VICTORY_POLICIES {
-                    game.next_turn(GameState::FascistVictoryPolicy)?;
+                    game.game_state = GameState::FascistVictoryPolicy;
                     return Ok(());
                 }
 

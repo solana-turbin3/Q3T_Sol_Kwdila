@@ -5,7 +5,7 @@ use crate::state::game_data::GameData;
 use crate::GameErrorCode;
 
 #[derive(Accounts)]
-pub struct NominateChancellor<'info> {
+pub struct PresidentVeto<'info> {
     #[account(mut)]
     pub president: Signer<'info>,
 
@@ -22,7 +22,7 @@ pub struct NominateChancellor<'info> {
     pub game_data: Account<'info, GameData>,
 }
 
-impl<'info> NominateChancellor<'info> {
+impl<'info> PresidentVeto<'info> {
     pub fn answer_chancellor_veto(&mut self, accept_veto: bool) -> Result<()> {
         let game = &mut self.game_data;
 

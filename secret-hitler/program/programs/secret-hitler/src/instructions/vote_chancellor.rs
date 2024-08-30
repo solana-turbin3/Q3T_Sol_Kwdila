@@ -4,7 +4,7 @@ use crate::state::{GameData, Nomination};
 use crate::{GameErrorCode, GameState, PlayerVote};
 
 #[derive(Accounts)]
-pub struct LeaveGame<'info> {
+pub struct VoteChancellor<'info> {
     #[account(mut)]
     pub player: Signer<'info>,
     #[account(
@@ -29,7 +29,7 @@ pub struct LeaveGame<'info> {
     pub game_data: Account<'info, GameData>,
 }
 
-impl<'info> LeaveGame<'info> {
+impl<'info> VoteChancellor<'info> {
     pub fn vote(&mut self, vote: PlayerVote) -> Result<()> {
         let nomination = &mut self.nomination;
         let game = &mut self.game_data;

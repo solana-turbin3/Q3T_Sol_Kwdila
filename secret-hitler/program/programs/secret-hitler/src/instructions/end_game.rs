@@ -22,7 +22,7 @@ pub struct EndGame<'info> {
     pub game_data: Account<'info, GameData>,
     #[account(
         seeds= [
-            b"deposit",
+            b"deposit_vault",
             game_data.key().to_bytes().as_ref()
         ],
         bump = game_data.deposit_vault_bump.ok_or(GameErrorCode::BetNotFound)?,
@@ -30,7 +30,7 @@ pub struct EndGame<'info> {
     pub deposit_vault: Option<SystemAccount<'info>>,
     #[account(
         seeds= [
-        b"deposit_vault",
+        b"bet_vault",
         game_data.key().to_bytes().as_ref()
     ],
         bump = game_data.bet_vault_bump.ok_or(GameErrorCode::DepositNotFound)?,
@@ -62,7 +62,14 @@ impl<'info> EndGame<'info> {
                     from: vault.to_account_info(), //this is checked in game_data account constraints
                 };
 
-                let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
+                let game_key = self.game_data.key().to_bytes();
+                let seeds=[        
+                    b"deposit_vault",
+                    game_key.as_ref(),
+                    &[self.game_data.deposit_vault_bump.ok_or(GameErrorCode::DepositNotFound)?]
+                    ];
+                let signer_seeds = &[&seeds[..]];
+                let ctx = CpiContext::new_with_signer(self.system_program.to_account_info(), accounts,signer_seeds);
                 transfer(ctx, vault.lamports())?
             }
             None => (),
@@ -79,7 +86,14 @@ impl<'info> EndGame<'info> {
                         vault.to_account_info(), //this is checked in game_data account constraints
                 };
 
-                let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
+                let game_key = self.game_data.key().to_bytes();
+                let seeds=[        
+                    b"bet_vault",
+                    game_key.as_ref(),
+                    &[self.game_data.bet_vault_bump.ok_or(GameErrorCode::BetNotFound)?]
+                    ];
+                let signer_seeds = &[&seeds[..]];                
+                let ctx = CpiContext::new_with_signer(self.system_program.to_account_info(), accounts,signer_seeds);
                 transfer(ctx, vault.lamports())?
             }
             None => (),

@@ -33,7 +33,7 @@ pub struct ChancellorVeto<'info> {
 }
 
 impl<'info> ChancellorVeto<'info> {
-    pub fn veto(&mut self) -> Result<()> {
+    pub fn initiate_veto(&mut self) -> Result<()> {
         self.game_data
             .next_turn(GameState::LegislativePresidentVeto)?;
         Ok(())

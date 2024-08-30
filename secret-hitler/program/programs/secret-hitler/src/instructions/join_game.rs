@@ -37,9 +37,9 @@ pub struct JoinGame<'info> {
     #[account(
         mut,
         seeds= [
-        b"deposit_vault",
-        game_data.key().to_bytes().as_ref()
-    ],
+            b"bet_vault",
+            game_data.key().to_bytes().as_ref()
+        ],
         bump = game_data.bet_vault_bump.ok_or(GameErrorCode::BetNotFound)?,
     )]
     pub bet_vault: Option<SystemAccount<'info>>,
@@ -95,6 +95,7 @@ impl<'info> JoinGame<'info> {
 
         self.player_data.set_inner(PlayerData {
             role: None,
+            is_investigated:false,
             bump: bumps.player_data,
         });
 

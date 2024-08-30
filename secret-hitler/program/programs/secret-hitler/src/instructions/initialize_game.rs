@@ -117,6 +117,7 @@ impl<'info> InitializeGame<'info> {
 
         self.player_data.set_inner(PlayerData {
             role: None,
+            is_investigated: false,
             bump: bumps.player_data,
         });
 

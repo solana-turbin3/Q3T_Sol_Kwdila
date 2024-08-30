@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{GameErrorCode, GameState, PlayerCount};
+use crate::{GameState, PlayerCount};
 
 #[account]
 pub struct GameData {
@@ -24,7 +24,7 @@ pub struct GameData {
     pub current_president_index: u64,
     pub previous_president_index: Option<u64>,
     pub current_chancellor_index: Option<u64>,
-    pub special_election_president: Option<Pubkey>,
+    pub is_special_election: bool,
     pub previous_chancellor_index: Option<u64>,
 
     //bumps
@@ -38,7 +38,6 @@ impl Space for GameData {
     const INIT_SPACE: usize = 
     8               // anchor descriminator
     + 32            // Pubkey
-    + 33            // Option<Pubkey>
     + 4 + 32 * 10   // Vec<Pubkey>
     + 4 + 32 * 2    // Vec<Pubkey>
     + 9 * 6         // Option<u64/i64>
@@ -47,6 +46,7 @@ impl Space for GameData {
     + 1 * 5         // u8
     + 1             // GameState
     + 1             // PlayerCount
+    + 1             // bool
     ;
 }
 
@@ -64,7 +64,7 @@ impl GameData {
     ) -> Result<()>{
         self.host = host;
 
-        self.special_election_president = None;
+        self.is_special_election = false;
         self.current_president_index = 4;
         self.current_chancellor_index = None;
         self.previous_president_index = None;
@@ -100,8 +100,20 @@ impl GameData {
     }
 
     pub fn next_president(&mut self) {
+        // if there was a special election in the past, then return to normal flow of presidents
+        if self.is_special_election {
+            self.is_special_election = false;
+            self.current_president_index = (self.previous_president_index.unwrap() + 1) % self.active_players.len() as u64;
+            return;
+        }
         self.previous_president_index = Some(self.current_president_index);
         self.current_president_index = (self.current_president_index + 1) % self.active_players.len() as u64;
+    }
+
+    pub fn special_election(&mut self, new_president:u64) {
+        self.is_special_election = true;
+        self.previous_president_index = Some(self.current_president_index);
+        self.current_president_index = new_president;
     }
 
     pub fn is_in_game(&self, player_key: &Pubkey) -> bool { 

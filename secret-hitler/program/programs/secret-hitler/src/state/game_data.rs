@@ -100,6 +100,8 @@ impl GameData {
     }
 
     pub fn next_president(&mut self) {
+        self.previous_chancellor_index = self.current_chancellor_index;
+        self.current_chancellor_index = None;
         // if there was a special election in the past, then return to normal flow of presidents
         if self.is_special_election {
             self.is_special_election = false;

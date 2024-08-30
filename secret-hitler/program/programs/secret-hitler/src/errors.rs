@@ -34,7 +34,7 @@ pub enum GameErrorCode {
     TurnFinished,
     #[msg("The president enacting policy needs LegistlativePresident State")]
     PresidentPolicyError,
-    #[msg("The Chancellor enacting policy needs LegistlativeChancellor State and PolivyCard")]
+    #[msg("The Chancellor enacting policy needs LegistlativeChancellor State and PolicyCard")]
     ChancellorPolicyError,
     #[msg("the player needs to be a chancellor or president")]
     PlayerNotInGovernment,
@@ -44,4 +44,6 @@ pub enum GameErrorCode {
     PrevPresidentNotFound,
     #[msg("The previous chancellor index was ot found in game_data")]
     PrevChancellorNotFound,
+    #[msg("Player needs to be the chancellor")]
+    ChancellorRoleNeeded,
 }

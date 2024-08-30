@@ -1,23 +1,11 @@
 use anchor_lang::prelude::*;
 
-use crate::{
-    state::{GameData, PlayerData},
-    GameErrorCode, GameState,
-};
+use crate::{state::GameData, GameErrorCode, GameState};
 
 #[derive(Accounts)]
 pub struct ChancellorVeto<'info> {
     #[account(mut)]
     pub player: Signer<'info>,
-    #[account(
-        seeds = [
-            b"player_data",
-            game_data.key().to_bytes().as_ref(),
-            player.key().to_bytes().as_ref(),
-            ],
-        bump = player_data.bump,
-    )]
-    pub player_data: Account<'info, PlayerData>,
     #[account(
         mut,
         seeds = [
@@ -27,7 +15,8 @@ pub struct ChancellorVeto<'info> {
         bump = game_data.bump,
 
         // Chancellor needs to veto vote in LegistlativeChancellor state
-        constraint = game_data.is_chancellor(player.key) && game_data.game_state == GameState::LegislativeChancellor @ GameErrorCode::ChancellorPolicyError,
+        constraint = game_data.is_chancellor(player.key) @ GameErrorCode::ChancellorRoleNeeded,
+        constraint = game_data.game_state == GameState::LegislativeChancellor @GameErrorCode::InvalidGameState,
     )]
     pub game_data: Account<'info, GameData>,
 }

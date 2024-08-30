@@ -79,6 +79,5 @@ impl<'info> EliminatePlayer<'info> {
 
     pub fn update_goverment(&mut self) {
         self.game_data.next_president();
-        self.game_data.current_chancellor_index = None;
     }
 }

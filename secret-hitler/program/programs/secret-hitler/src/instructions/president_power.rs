@@ -10,6 +10,7 @@ pub struct PresidentPower<'info> {
     pub president: Signer<'info>,
 
     #[account(
+        mut,
         seeds = [
             b"secret_hitler",
             game_data.host.to_bytes().as_ref()

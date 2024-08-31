@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SecretHitler } from "../target/types/secret_hitler";
-import { LAMPORTS_PER_SOL, PublicKey, Signer } from "@solana/web3.js";
+import { Keypair, LAMPORTS_PER_SOL, PublicKey, Signer } from "@solana/web3.js";
 import { assert } from "chai";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
@@ -46,6 +46,13 @@ describe("secret-hitler", () => {
     [Buffer.from("bet_vault"), gameData.toBuffer()],
     program.programId,
   );
+
+  let nomination = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("chancellor_nomination"), gameData.toBuffer()],
+    program.programId,
+  )[0];
+
+  let president;
 
   players.forEach(async (player) => {
     await airdrop(provider.connection, player.publicKey);
@@ -223,6 +230,51 @@ describe("secret-hitler", () => {
       Object.keys(gameAfter.gameState)[0].toString(),
       "chancellorNomination",
       "wrong game state detected",
+    );
+    assert.strictEqual(
+      gameAfter.currentPresidentIndex.toString(),
+      "4",
+      "wrong president index detected",
+    );
+  });
+  it("Nominate chancellor", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    // find president player keypair
+    let president: Keypair | undefined = players.find(
+      (player) => player.publicKey.toString() === key.toString(),
+    );
+    if (!president) console.error("no president found");
+
+    await airdrop(provider.connection, president.publicKey);
+
+    await program.methods
+      .nominateChancelor(new anchor.BN(0))
+      .accountsPartial({
+        president: president.publicKey,
+        gameData,
+        nomination,
+      })
+      .signers([president])
+      .rpc()
+      .then(confirmTx);
+
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.activePlayers.length.toString(),
+      "5",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "chancellorVoting",
+      "wrong game state detected",
+    );
+    let nominationAfter = await program.account.nomination.fetch(nomination);
+    assert.strictEqual(
+      nominationAfter.ja.toString(),
+      "1",
+      "Unexpected ja votes",
     );
   });
 });

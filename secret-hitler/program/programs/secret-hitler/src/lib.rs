@@ -45,4 +45,12 @@ pub mod secret_hitler {
         ctx.accounts.start()?;
         Ok(())
     }
+    pub fn nominate_chancelor(ctx: Context<NominateChancellor>, player_index: u64) -> Result<()> {
+        ctx.accounts.nominated_chancellor(player_index, ctx.bumps)?;
+        Ok(())
+    }
+    pub fn vote_chancellor(ctx: Context<VoteChancellor>, vote: PlayerVote) -> Result<()> {
+        ctx.accounts.vote(vote)?;
+        Ok(())
+    }
 }

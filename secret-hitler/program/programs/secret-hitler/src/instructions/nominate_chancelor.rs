@@ -21,6 +21,7 @@ pub struct NominateChancellor<'info> {
     )]
     pub nomination: Account<'info, Nomination>,
     #[account(
+        mut,
         seeds = [
             b"secret_hitler",
             game_data.host.to_bytes().as_ref()
@@ -37,7 +38,7 @@ pub struct NominateChancellor<'info> {
 impl<'info> NominateChancellor<'info> {
     pub fn nominated_chancellor(
         &mut self,
-        nominated_chancellor_index: usize,
+        nominated_chancellor_index: u64,
         bumps: NominateChancellorBumps,
     ) -> Result<()> {
         let game = &mut self.game_data;

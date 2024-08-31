@@ -21,6 +21,7 @@ pub struct EndGame<'info> {
     )]
     pub game_data: Account<'info, GameData>,
     #[account(
+        mut,
         seeds= [
             b"deposit_vault",
             game_data.key().to_bytes().as_ref()
@@ -29,6 +30,7 @@ pub struct EndGame<'info> {
     )]
     pub deposit_vault: Option<SystemAccount<'info>>,
     #[account(
+        mut,
         seeds= [
         b"bet_vault",
         game_data.key().to_bytes().as_ref()

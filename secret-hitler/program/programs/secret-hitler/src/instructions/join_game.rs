@@ -53,7 +53,6 @@ pub struct JoinGame<'info> {
         bump = game_data.bump,
 
         constraint = game_data.game_state == GameState::Setup @GameErrorCode::InvalidGameState,
-        constraint = game_data.active_players.len() > 1,
         constraint = !game_data.is_in_game(player.key) @GameErrorCode::PlayerAlreadyJoined, 
         constraint = game_data.active_players.len() < game_data.max_players as usize @GameErrorCode::MaxPlayersReached,
         constraint = game_data.entry_deposit.is_some() == deposit_vault.is_some() @GameErrorCode::DepositNotFound,

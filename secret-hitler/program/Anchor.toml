@@ -5,13 +5,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-secret_hitler = "AnvTCoxxQzscMBqVPtdEsc6it1U39rmqt6rQvfCt9Uac"
+prediction_market = "AnvTCoxxQzscMBqVPtdEsc6it1U39rmqt6rQvfCt9Uac"
 
 [registry]
-url = "https://anchor.projectserum.com"
+url = "https://api.apr.dev"
 
 [provider]
-cluster = "Devnet"
+cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

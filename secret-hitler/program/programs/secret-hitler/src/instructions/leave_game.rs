@@ -1,5 +1,5 @@
 use anchor_lang::{
-    accounts::signer, prelude::*, system_program::{transfer, Transfer}
+    prelude::*, system_program::{transfer, Transfer}
 };
 
 use crate::state::{GameData, PlayerData};

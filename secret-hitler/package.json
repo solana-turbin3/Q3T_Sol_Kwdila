@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@nx/workspace": "16.10.0",
+    "@solana/web3.js": "^1.95.3",
     "nx": "16.10.0"
   }
 }

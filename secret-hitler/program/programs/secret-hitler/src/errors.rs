@@ -46,4 +46,6 @@ pub enum GameErrorCode {
     PrevChancellorNotFound,
     #[msg("Player needs to be the chancellor")]
     ChancellorRoleNeeded,
+    #[msg("The starting player count could not be found in game data")]
+    StartPlayerCountNotFound,
 }

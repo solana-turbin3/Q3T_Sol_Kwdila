@@ -30,7 +30,7 @@ impl<'info> PresidentVeto<'info> {
         match accept_veto {
             true => {
                 game.next_president();
-                game.next_turn(GameState::ChancellorVoting)?;
+                game.next_turn(GameState::ChancellorNomination)?;
                 game.failed_elections += 1;
             }
             false => game.next_turn(GameState::LegislativeChancellor)?,

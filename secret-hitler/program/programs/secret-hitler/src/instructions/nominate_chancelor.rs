@@ -10,7 +10,7 @@ pub struct NominateChancellor<'info> {
     #[account(mut)]
     pub president: Signer<'info>,
     #[account(
-        init,
+        init_if_needed,
         payer=president,
         space= Nomination::INIT_SPACE,
         seeds =[
@@ -54,21 +54,21 @@ impl<'info> NominateChancellor<'info> {
 
         let prev_president = game.previous_president_index;
 
-        let nomination_check: bool = match game.previous_chancellor_index.is_some() {
+        let eligible = match game.previous_chancellor_index.is_some() {
             //check if nominated_chancellor is eligible
             true => {
                 let prev_chancellor_index = game
                     .previous_chancellor_index
                     .ok_or(GameErrorCode::PrevChancellorNotFound)?;
 
-                let mut result = game
-                    .active_players
-                    .get(prev_chancellor_index as usize)
-                    .ok_or(GameErrorCode::PlayerNotInGame)?
-                    .eq(nominated_chancelor); //prev chancellor ineligible
+                let prev_chancellor = game.active_players.get(prev_chancellor_index as usize);
+                let mut result = true;
+                if prev_chancellor.is_some() {
+                    result = prev_chancellor.unwrap() != nominated_chancelor; //prev chancellor ineligible
+                }
 
                 match game.active_players.len() <= 5 {
-                    true => result,
+                    true => (), // no checks needed, prev president is allowed
                     false => {
                         if prev_president.is_some() {
                             result &= game
@@ -78,16 +78,13 @@ impl<'info> NominateChancellor<'info> {
                                 .ok_or(GameErrorCode::PlayerNotInGame)?
                                 .eq(nominated_chancelor) //prev president ineligible
                         }
-                        result
                     }
                 }
+                result
             }
             false => true, // no checks needed if this is the first chancellor
         };
-        require!(
-            nomination_check,
-            GameErrorCode::IneligibleChancellorNominated
-        );
+        require!(eligible, GameErrorCode::IneligibleChancellorNominated);
 
         game.next_turn(GameState::ChancellorVoting)?;
 

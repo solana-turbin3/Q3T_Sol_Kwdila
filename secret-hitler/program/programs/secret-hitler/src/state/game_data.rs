@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{GameState, PlayerCount};
+use crate::{FascistBoard, GameErrorCode, GameState, PlayerCount};
 
 #[account]
 pub struct GameData {
@@ -134,5 +134,35 @@ impl GameData {
         .and_then(|index| self.active_players.get(index as usize))
         .map_or(false, |chancellor| player_key == chancellor)
     }
+
+    pub fn get_fascist_board(&self) -> Result<FascistBoard> {
+        match self.start_player_count.ok_or(GameErrorCode::StartPlayerCountNotFound)? {
+            PlayerCount::Five | PlayerCount::Six => Ok(FascistBoard::FiveToSix),
+            PlayerCount::Seven | PlayerCount::Eight => Ok(FascistBoard::SevenToEight),
+            PlayerCount::Nine | PlayerCount::Ten => Ok(FascistBoard::NineToTen),
+        }
+    }
+
+    pub fn get_presidential_power_state(&self, fascist_board: FascistBoard) -> Option<GameState> {
+         match (fascist_board, self.fascist_policies_enacted) {
+                    (FascistBoard::FiveToSix, 1 | 2) | (FascistBoard::SevenToEight, 1) => {
+                        None
+                    },
+                    (FascistBoard::FiveToSix, 3) => Some(GameState::PresidentialPowerPeek),
+                    (FascistBoard::FiveToSix, 4 | 5)
+                    | (FascistBoard::SevenToEight, 4 | 5)
+                    | (FascistBoard::NineToTen, 4 | 5) => {
+                        Some(GameState::PresidentialPowerExecution)
+                    },
+                    (FascistBoard::SevenToEight, 2) | (FascistBoard::NineToTen, 1 | 2) => {
+                        Some(GameState::PresidentialPowerInvestigate)
+                    },
+                    (FascistBoard::SevenToEight, 3) | (FascistBoard::NineToTen, 3) => {
+                        Some(GameState::PresidentialPowerElection)
+                    },
+                    _ => None,
+         }
+    }
 }
+
 

@@ -37,10 +37,7 @@ impl<'info> VoteChancellor<'info> {
         let current_time = Clock::get()?.unix_timestamp;
 
         require!(
-            current_time
-                - game
-                    .turn_started_at
-                    .ok_or(GameErrorCode::InvalidGameState)?
+            current_time - game.turn_started_at.ok_or(GameErrorCode::TurnFinished)?
                 < game.turn_duration,
             GameErrorCode::TurnFinished
         );
@@ -66,12 +63,12 @@ impl<'info> VoteChancellor<'info> {
             PlayerVote::Ja => nomination.ja += 1,
         }
 
-        if nomination.nein > num_players.div_ceil(2) - 1 {
+        if nomination.nein > (num_players / 2) {
             game.failed_elections += 1;
             game.next_turn(GameState::ChancellorNomination)?;
         }
 
-        if nomination.ja > num_players.div_ceil(2) - 1 {
+        if nomination.ja > (num_players / 2) {
             game.previous_chancellor_index = game.current_chancellor_index;
             game.current_chancellor_index = Some(nomination.nominee_index);
             game.next_turn(GameState::LegislativePresident)?;

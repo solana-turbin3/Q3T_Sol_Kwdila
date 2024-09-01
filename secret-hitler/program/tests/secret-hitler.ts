@@ -3,7 +3,6 @@ import { Program } from "@coral-xyz/anchor";
 import { SecretHitler } from "../target/types/secret_hitler";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, Signer } from "@solana/web3.js";
 import { assert } from "chai";
-import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
 describe("secret-hitler", () => {
   const provider = anchor.AnchorProvider.env();
@@ -52,7 +51,8 @@ describe("secret-hitler", () => {
     program.programId,
   )[0];
 
-  let president;
+  let president: Keypair;
+  let chancellor: Keypair;
 
   players.forEach(async (player) => {
     await airdrop(provider.connection, player.publicKey);
@@ -241,10 +241,11 @@ describe("secret-hitler", () => {
     let game = await program.account.gameData.fetch(gameData);
     let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
     // find president player keypair
-    let president: Keypair | undefined = players.find(
+    president = players.find(
       (player) => player.publicKey.toString() === key.toString(),
     );
-    if (!president) console.error("no president found");
+
+    if (host.publicKey.toString() === key.toString()) president = host;
 
     await airdrop(provider.connection, president.publicKey);
 
@@ -256,7 +257,7 @@ describe("secret-hitler", () => {
         nomination,
       })
       .signers([president])
-      .rpc()
+      .rpc({ skipPreflight: true })
       .then(confirmTx);
 
     let gameAfter = await program.account.gameData.fetch(gameData);
@@ -275,6 +276,280 @@ describe("secret-hitler", () => {
       nominationAfter.ja.toString(),
       "1",
       "Unexpected ja votes",
+    );
+  });
+  it("Vote chancellor", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    await Promise.all(
+      players.slice(2, 4).map(async (player) => {
+        if (player.publicKey.toString() === president.publicKey.toString()) {
+          return;
+        }
+        await program.methods
+          .voteChancellor({ ja: {} })
+          .accountsPartial({
+            player: player.publicKey,
+            gameData,
+            nomination,
+          })
+          .signers([player])
+          .rpc({ skipPreflight: true })
+          .then(confirmTx);
+      }),
+    );
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.activePlayers.length.toString(),
+      "5",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "legislativePresident",
+      "wrong game state detected",
+    );
+  });
+  it("president Encat policy", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    // find president player keypair
+    president = players.find(
+      (player) => player.publicKey.toString() === key.toString(),
+    );
+
+    if (host.publicKey.toString() === key.toString()) president = host;
+
+    await airdrop(provider.connection, president.publicKey);
+
+    await program.methods
+      .enactPolicy(null)
+      .accountsPartial({
+        player: president.publicKey,
+        gameData,
+      })
+      .signers([president])
+      .rpc({ skipPreflight: true })
+      .then(confirmTx);
+
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.activePlayers.length.toString(),
+      "5",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "legislativeChancellor",
+      "wrong game state detected",
+    );
+  });
+  it("Chancellor Encat policy", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    let key = game.activePlayers[game.currentChancellorIndex.toNumber()];
+    // find chancellor player keypair
+    chancellor = players.find(
+      (player) => player.publicKey.toString() === key.toString(),
+    );
+
+    if (host.publicKey.toString() === key.toString()) chancellor = host;
+
+    await airdrop(provider.connection, president.publicKey);
+
+    await program.methods
+      .enactPolicy({ liberal: {} })
+      .accountsPartial({
+        player: chancellor.publicKey,
+        gameData,
+      })
+      .signers([chancellor])
+      .rpc({ skipPreflight: true })
+      .then(confirmTx);
+
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.liberalPoliciesEnacted.toString(),
+      "1",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "chancellorNomination",
+      "wrong game state detected",
+    );
+  });
+  it("Nominate chancellor", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    // find president player keypair
+    president = players.find(
+      (player) => player.publicKey.toString() === key.toString(),
+    );
+
+    if (host.publicKey.toString() === key.toString()) president = host;
+
+    await airdrop(provider.connection, president.publicKey);
+
+    await program.methods
+      .nominateChancelor(new anchor.BN(4))
+      .accountsPartial({
+        president: president.publicKey,
+        gameData,
+        nomination,
+      })
+      .signers([president])
+      .rpc({ skipPreflight: true })
+      .then(confirmTx);
+
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.activePlayers.length.toString(),
+      "5",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "chancellorVoting",
+      "wrong game state detected",
+    );
+    let nominationAfter = await program.account.nomination.fetch(nomination);
+    assert.strictEqual(
+      nominationAfter.ja.toString(),
+      "1",
+      "Unexpected ja votes",
+    );
+  });
+  it("Vote chancellor", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    await Promise.all(
+      players.slice(2, 4).map(async (player) => {
+        if (player.publicKey.toString() === president.publicKey.toString()) {
+          return;
+        }
+        await program.methods
+          .voteChancellor({ ja: {} })
+          .accountsPartial({
+            player: player.publicKey,
+            gameData,
+            nomination,
+          })
+          .signers([player])
+          .rpc({ skipPreflight: true })
+          .then(confirmTx);
+      }),
+    );
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.activePlayers.length.toString(),
+      "5",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "legislativePresident",
+      "wrong game state detected",
+    );
+  });
+  it("president Encat policy", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    // find president player keypair
+    president = players.find(
+      (player) => player.publicKey.toString() === key.toString(),
+    );
+
+    if (host.publicKey.toString() === key.toString()) president = host;
+
+    await airdrop(provider.connection, president.publicKey);
+
+    await program.methods
+      .enactPolicy(null)
+      .accountsPartial({
+        player: president.publicKey,
+        gameData,
+      })
+      .signers([president])
+      .rpc({ skipPreflight: true })
+      .then(confirmTx);
+
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.activePlayers.length.toString(),
+      "5",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "legislativeChancellor",
+      "wrong game state detected",
+    );
+  });
+  it("Chancellor initiate veto", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    let key = game.activePlayers[game.currentChancellorIndex.toNumber()];
+    // find chancellor player keypair
+    chancellor = players.find(
+      (player) => player.publicKey.toString() === key.toString(),
+    );
+
+    if (host.publicKey.toString() === key.toString()) chancellor = host;
+
+    await airdrop(provider.connection, president.publicKey);
+
+    await program.methods
+      .chancellorInitiateVeto()
+      .accountsPartial({
+        player: chancellor.publicKey,
+        gameData,
+      })
+      .signers([chancellor])
+      .rpc({ skipPreflight: true })
+      .then(confirmTx);
+
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.liberalPoliciesEnacted.toString(),
+      "1",
+      "expected player count is 5 but got " + gameAfter.activePlayers.length,
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "legislativePresidentVeto",
+      "wrong game state detected",
+    );
+  });
+  it("accept chancellor veto", async () => {
+    let game = await program.account.gameData.fetch(gameData);
+    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    // find president player keypair
+    president = players.find(
+      (player) => player.publicKey.toString() === key.toString(),
+    );
+
+    if (host.publicKey.toString() === key.toString()) president = host;
+
+    await airdrop(provider.connection, president.publicKey);
+
+    await program.methods
+      .presidentAnswerVeto(true)
+      .accountsPartial({
+        president: president.publicKey,
+        gameData,
+      })
+      .signers([president])
+      .rpc({ skipPreflight: true })
+      .then(confirmTx);
+
+    let gameAfter = await program.account.gameData.fetch(gameData);
+    assert.strictEqual(
+      gameAfter.failedElections.toString(),
+      "1",
+      "expected player count is 1 but got " +
+        gameAfter.failedElections.toString(),
+    );
+    assert.strictEqual(
+      Object.keys(gameAfter.gameState)[0].toString(),
+      "chancellorNomination",
+      "wrong game state detected",
     );
   });
 });

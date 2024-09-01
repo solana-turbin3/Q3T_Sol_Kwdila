@@ -53,4 +53,16 @@ pub mod secret_hitler {
         ctx.accounts.vote(vote)?;
         Ok(())
     }
+    pub fn enact_policy(ctx: Context<EnactPolicy>, policy: Option<PolicyCard>) -> Result<()> {
+        ctx.accounts.enact_policy(policy)?;
+        Ok(())
+    }
+    pub fn chancellor_initiate_veto(ctx: Context<ChancellorVeto>) -> Result<()> {
+        ctx.accounts.initiate_veto()?;
+        Ok(())
+    }
+    pub fn president_answer_veto(ctx: Context<PresidentVeto>, accept_veto: bool) -> Result<()> {
+        ctx.accounts.answer_chancellor_veto(accept_veto)?;
+        Ok(())
+    }
 }

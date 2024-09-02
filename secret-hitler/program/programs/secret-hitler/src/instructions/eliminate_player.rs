@@ -45,17 +45,16 @@ impl<'info> EliminatePlayer<'info> {
             GameErrorCode::TurnNotFinished
         );
 
-        let mut indices_to_remove: Vec<u64> = Vec::new();
+        let mut indices_to_remove: Vec<usize> = Vec::new();
         let mut inactive_goverment = false;
 
         match game.game_state {
             GameState::ChancellorVoting => {
                 let voters = &self.nomination.voters_index;
                 for (index, key) in game.active_players.iter().enumerate() {
-                    let index_u64 = index as u64;
-
-                    if !voters.contains(&index_u64) {
-                        indices_to_remove.push(index_u64);
+                    let index_u8 = index as u8;
+                    if !voters.contains(&index_u8) {
+                        indices_to_remove.push(index_u8 as usize);
                         if game.is_chancellor(key) | game.is_president(key) {
                             inactive_goverment = true;
                         }

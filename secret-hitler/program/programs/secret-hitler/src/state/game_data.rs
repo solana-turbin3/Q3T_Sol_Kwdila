@@ -133,7 +133,11 @@ impl GameData {
 
     pub fn is_chancellor(&self, player_key: &Pubkey) -> bool {
         self.current_chancellor_index
-        .map_or(false, |chancellor| player_key.eq(self.active_players.get(chancellor as usize)))
+        .map_or(false, |chancellor| player_key.eq(self.active_players.get(chancellor as usize).unwrap()))
+    }
+
+    pub fn get_player_index(&self, player:&Pubkey) ->Option<usize> {
+        self.active_players.iter().position(|key| key.eq(player))
     }
 
     pub fn get_fascist_board(&self) -> Result<FascistBoard> {
@@ -149,8 +153,7 @@ impl GameData {
                     (FascistBoard::FiveToSix, 1 | 2) | (FascistBoard::SevenToEight, 1) => {
                         None
                     },
-                    (FascistBr
-                        ard::FiveToSix, 3) => Some(GameState::PresidentialPowerPeek),
+                    (FascistBoard::FiveToSix, 3) => Some(GameState::PresidentialPowerPeek),
                     (FascistBoard::FiveToSix, 4 | 5)
                     | (FascistBoard::SevenToEight, 4 | 5)
                     | (FascistBoard::NineToTen, 4 | 5) => {

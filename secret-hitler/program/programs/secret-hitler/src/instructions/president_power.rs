@@ -17,22 +17,22 @@ pub struct PresidentPower<'info> {
             ],
         bump = game_data.bump,
 
-        constraint = game_data.is_president(president.key()) @GameErrorCode::PresidentRoleRequired,
+        constraint = game_data.is_president(president.key) @GameErrorCode::PresidentRoleRequired,
     )]
     pub game_data: Account<'info, GameData>,
 }
 
 impl<'info> PresidentPower<'info> {
-    pub fn activate_president_veto(&mut self, targeted_player_index: u64) -> Result<()> {
+    pub fn activate_president_veto(&mut self, targeted_player: &Pubkey) -> Result<()> {
         let game = &mut self.game_data;
-        let target_player_key = game
-            .active_players
-            .get(targeted_player_index as usize)
-            .ok_or(GameErrorCode::PlayerNotInGame)?;
+        require!(
+            game.active_players.contains(targeted_player),
+            GameErrorCode::PlayerNotInGame
+        );
 
         match game.game_state {
             GameState::PresidentialPowerElection => {
-                game.special_election(targeted_player_index);
+                game.special_election(targeted_player);
                 game.next_turn(GameState::ChancellorNomination)?;
             }
             GameState::PresidentialPowerPeek => {
@@ -50,9 +50,14 @@ impl<'info> PresidentPower<'info> {
                 game.next_turn(GameState::ChancellorNomination)?;
             }
             GameState::PresidentialPowerExecution => {
-                let player = *target_player_key;
+                let player = *targeted_player;
+                let player_index = game
+                    .active_players
+                    .iter()
+                    .position(|key| key.eq(&player))
+                    .unwrap();
                 game.eliminated_players.push(player);
-                game.active_players.remove(targeted_player_index as usize);
+                game.active_players.remove(player_index);
                 game.next_president();
                 game.next_turn(GameState::ChancellorNomination)?;
             }

@@ -50,7 +50,7 @@ impl<'info> VoteChancellor<'info> {
             .active_players
             .iter()
             .position(|key| key == self.player.key)
-            .ok_or(GameErrorCode::PlayerNotInGame)? as u64;
+            .ok_or(GameErrorCode::PlayerNotInGame)? as u8;
 
         // make sure the player has not voted already
         require!(
@@ -70,7 +70,9 @@ impl<'info> VoteChancellor<'info> {
 
         if nomination.ja > (num_players / 2) {
             game.previous_chancellor_index = game.current_chancellor_index;
-            game.current_chancellor_index = Some(nomination.nominee_index);
+            // this is safe because it is checked earlier
+            let index = game.get_player_index(&nomination.nominee).unwrap() as u8;
+            game.current_chancellor_index = Some(index);
             game.next_turn(GameState::LegislativePresident)?;
         }
 

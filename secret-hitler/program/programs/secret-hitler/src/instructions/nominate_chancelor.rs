@@ -38,19 +38,14 @@ pub struct NominateChancellor<'info> {
 impl<'info> NominateChancellor<'info> {
     pub fn nominated_chancellor(
         &mut self,
-        nominated_chancellor_index: u64,
+        nominated_chancellor: Pubkey,
         bumps: NominateChancellorBumps,
     ) -> Result<()> {
         let game = &mut self.game_data;
         require!(
-            nominated_chancellor_index < 10,
+            game.active_players.contains(&nominated_chancellor),
             GameErrorCode::PlayerNotInGame
         );
-
-        let nominated_chancelor = game
-            .active_players
-            .get(nominated_chancellor_index as usize)
-            .ok_or(GameErrorCode::PlayerNotInGame)?;
 
         let prev_president = game.previous_president_index;
 
@@ -64,7 +59,8 @@ impl<'info> NominateChancellor<'info> {
                 let prev_chancellor = game.active_players.get(prev_chancellor_index as usize);
                 let mut result = true;
                 if prev_chancellor.is_some() {
-                    result = prev_chancellor.unwrap() != nominated_chancelor; //prev chancellor ineligible
+                    result = prev_chancellor.unwrap().ne(&nominated_chancellor);
+                    //prev chancellor ineligible
                 }
 
                 match game.active_players.len() <= 5 {
@@ -76,7 +72,7 @@ impl<'info> NominateChancellor<'info> {
                                 .get(prev_president.ok_or(GameErrorCode::PrevPresidentNotFound)?
                                     as usize)
                                 .ok_or(GameErrorCode::PlayerNotInGame)?
-                                .eq(nominated_chancelor) //prev president ineligible
+                                .eq(&nominated_chancellor) //prev president ineligible
                         }
                     }
                 }
@@ -89,7 +85,7 @@ impl<'info> NominateChancellor<'info> {
         game.next_turn(GameState::ChancellorVoting)?;
 
         self.nomination.voters_index = vec![self.game_data.current_president_index];
-        self.nomination.nominee_index = nominated_chancellor_index as u64;
+        self.nomination.nominee = nominated_chancellor;
         self.nomination.nein = 0;
         self.nomination.ja = 1; // it is assumed the president voted ja by nominating
         self.nomination.bump = bumps.nomination;

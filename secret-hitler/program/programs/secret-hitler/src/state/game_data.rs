@@ -11,6 +11,7 @@ pub struct GameData {
     pub entry_deposit: Option<u64>, // returned to everyone completing the game
     pub bet_amount: Option<u64>,    // devided between winners
     pub start_player_count: Option<PlayerCount>,
+    pub all_starting_players: Vec<Pubkey>,
 
     // these change during the game
     pub active_players: Vec<Pubkey>,
@@ -21,11 +22,11 @@ pub struct GameData {
     pub liberal_policies_enacted: u8,
     pub failed_elections: u8,
 
-    pub current_president_index: u64,
-    pub previous_president_index: Option<u64>,
-    pub current_chancellor_index: Option<u64>,
     pub is_special_election: bool,
-    pub previous_chancellor_index: Option<u64>,
+    pub current_president: Pubkey,
+    pub previous_president: Option<Pubkey>,
+    pub current_chancellor: Option<Pubkey>,
+    pub previous_chancellor: Option<Pubkey>,
 
     //bumps
     pub bump: u8,
@@ -37,15 +38,17 @@ pub struct GameData {
 impl Space for GameData {
     const INIT_SPACE: usize = 
     8               // anchor descriminator
-    + 32            // Pubkey
+    + 32 * 2        // Pubkey
+    + 33 * 3        // Option<Pubkey>
+    + 4 + 32 * 10   // Vec<Pubkey>
     + 4 + 32 * 10   // Vec<Pubkey>
     + 4 + 32 * 2    // Vec<Pubkey>
-    + 9 * 6         // Option<u64/i64>
+    + 9 * 3         // Option<u64/i64>
     + 2 * 2         // Option<u8>
-    + 8             // u64
+    + 8             // i64
     + 1 * 5         // u8
     + 1             // GameState
-    + 1             // PlayerCount
+    + 2             // Option<PlayerCount>
     + 1             // bool
     ;
 }
@@ -65,10 +68,10 @@ impl GameData {
         self.host = host;
 
         self.is_special_election = false;
-        self.current_president_index = 4;
-        self.current_chancellor_index = None;
-        self.previous_president_index = None;
-        self.previous_chancellor_index = None;
+        self.current_president = self.active_players.get(3).unwrap().clone();
+        self.current_chancellor = None;
+        self.previous_president = None;
+        self.previous_chancellor = None;
 
         self.turn_duration = turn_duration;
         self.max_players = max_players;
@@ -76,6 +79,7 @@ impl GameData {
         self.eliminated_players = Vec::new();
         self.turn_started_at = None;
         self.start_player_count = None;
+        self.all_starting_players = Vec::new();
 
         self.entry_deposit = entry_deposit;
         self.bet_amount = bet_amount;
@@ -100,38 +104,36 @@ impl GameData {
     }
 
     pub fn next_president(&mut self) {
-        self.previous_chancellor_index = self.current_chancellor_index;
-        self.current_chancellor_index = None;
+        self.previous_chancellor = self.current_chancellor;
+        self.current_chancellor = None;
         // if there was a special election in the past, then return to normal flow of presidents
         if self.is_special_election {
             self.is_special_election = false;
-            self.current_president_index = (self.previous_president_index.unwrap() + 1) % self.active_players.len() as u64;
+            let next_president_index = self.active_players.iter().position(|key| key == &self.previous_president.unwrap()).unwrap() + 1 % self.active_players.len(); 
+            self.current_president = self.active_players.get(next_president_index).unwrap().clone();
             return;
         }
-        self.previous_president_index = Some(self.current_president_index);
-        self.current_president_index = (self.current_president_index + 1) % self.active_players.len() as u64;
+        self.previous_president = Some(self.current_president);
+        let next_president_index = self.active_players.iter().position(|key| key == &self.current_chancellor.unwrap()).unwrap() + 1 % self.active_players.len(); 
+        self.current_president = self.active_players.get(next_president_index).unwrap().clone();
     }
 
-    pub fn special_election(&mut self, new_president:u64) {
+    pub fn special_election(&mut self, new_president:Pubkey) {
         self.is_special_election = true;
-        self.previous_president_index = Some(self.current_president_index);
-        self.current_president_index = new_president;
+        self.previous_president = Some(self.current_president);
+        self.current_president = new_president;
     }
 
     pub fn is_in_game(&self, player_key: &Pubkey) -> bool { 
         self.active_players.contains(player_key)
     }
 
-    pub fn is_president(&self, player_key: &Pubkey) -> bool {
-        self.active_players
-        .get(self.current_president_index as usize)
-        .map_or(false, |current_president| {
-            player_key == current_president
-        })
-    }
-    pub fn is_chancellor(&self, player_key: &Pubkey) -> bool {
-        self.current_chancellor_index
-        .and_then(|index| self.active_players.get(index as usize))
+    pub fn is_president(&self, player_key: Pubkey) -> bool {
+        player_key == self.current_president
+    }    
+
+    pub fn is_chancellor(&self, player_key: Pubkey) -> bool {
+        self.current_chancellor
         .map_or(false, |chancellor| player_key == chancellor)
     }
 

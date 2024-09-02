@@ -65,4 +65,8 @@ pub mod secret_hitler {
         ctx.accounts.answer_chancellor_veto(accept_veto)?;
         Ok(())
     }
+    pub fn eliminate_inactive_player(ctx: Context<EliminatePlayer>) -> Result<()> {
+        ctx.accounts.eliminate_player()?;
+        Ok(())
+    }
 }

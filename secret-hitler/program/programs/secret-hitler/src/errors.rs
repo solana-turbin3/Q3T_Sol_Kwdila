@@ -48,4 +48,6 @@ pub enum GameErrorCode {
     ChancellorRoleNeeded,
     #[msg("The starting player count could not be found in game data")]
     StartPlayerCountNotFound,
+    #[msg("Could not find the turn started at timestamp")]
+    TurnStartTimeNotFound,
 }

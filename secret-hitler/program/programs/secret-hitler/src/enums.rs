@@ -15,8 +15,6 @@ pub enum GameState {
     PresidentialPowerExecution, // President may choose a player to execute
     PresidentialPowerElection, // President chooses the next president, seat continues as normal after.
 
-    PostLegislative, // Waiting for the President to end their turn.
-
     LiberalVictoryPolicy, // Liberal Party won through enacting Liberal policies.
     LiberalVictoryExecution, // Liberal Party won through executing Hitler.
     FascistVictoryPolicy, // Fascist Party won through enacting Fascist policies.

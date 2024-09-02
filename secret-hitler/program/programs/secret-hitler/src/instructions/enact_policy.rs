@@ -18,6 +18,8 @@ pub struct EnactPolicy<'info> {
             ],
         bump = game_data.bump,
 
+        // Ensure player is either the current president or chancellor
+        constraint = game_data.is_chancellor(player.key) || game_data.is_president(player.key) @GameErrorCode::PlayerNotInGovernment,
         // president needs to enact policy in LegistlativePresident state
         constraint = game_data.is_president(player.key) == (game_data.game_state == GameState::LegislativePresident) @GameErrorCode::PresidentPolicyError,
         // Chancellor needs to enact policy in LegistlativeChancellor state
@@ -29,12 +31,6 @@ pub struct EnactPolicy<'info> {
 impl<'info> EnactPolicy<'info> {
     pub fn enact_policy(&mut self, policy: Option<PolicyCard>) -> Result<()> {
         let game = &mut self.game_data;
-
-        // Ensure player is either the current president or chancellor
-        require!(
-            game.is_chancellor(&self.player.key) | game.is_president(&self.player.key),
-            GameErrorCode::PlayerNotInGovernment
-        );
 
         // Check game state for the president or chancellor
         match game.game_state {

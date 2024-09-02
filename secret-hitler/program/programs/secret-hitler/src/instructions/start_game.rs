@@ -23,6 +23,7 @@ impl<'info> StartGame<'info> {
     pub fn start(&mut self) -> Result<()> {
         let game = &mut self.game_data;
         game.start_player_count = PlayerCount::from(game.active_players.len() as u8);
+        game.all_starting_players = game.active_players.clone();
         game.next_turn(GameState::ChancellorNomination)?;
 
         Ok(())

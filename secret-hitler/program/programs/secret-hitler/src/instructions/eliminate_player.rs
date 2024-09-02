@@ -34,12 +34,11 @@ pub struct EliminatePlayer<'info> {
 impl<'info> EliminatePlayer<'info> {
     pub fn eliminate_player(&mut self) -> Result<()> {
         let game = &mut self.game_data;
-        let voters = &self.nomination.voters_index;
 
         let current_time = Clock::get()?.unix_timestamp;
         let turn_start_time = game
             .turn_started_at
-            .ok_or(GameErrorCode::InvalidGameState)?;
+            .ok_or(GameErrorCode::TurnStartTimeNotFound)?;
 
         require!(
             current_time - turn_start_time > 0,
@@ -47,20 +46,25 @@ impl<'info> EliminatePlayer<'info> {
         );
 
         let mut indices_to_remove: Vec<u64> = Vec::new();
-        let current_government_indices = [
-            Some(game.current_president_index),
-            game.current_chancellor_index,
-        ];
         let mut inactive_goverment = false;
 
-        for (index, _) in game.active_players.iter().enumerate() {
-            let index_u64 = index as u64;
+        match game.game_state {
+            GameState::ChancellorVoting => {
+                let voters = &self.nomination.voters_index;
+                for (index, key) in game.active_players.iter().enumerate() {
+                    let index_u64 = index as u64;
 
-            if current_government_indices.contains(&Some(index_u64)) {
-                inactive_goverment = true;
+                    if !voters.contains(&index_u64) {
+                        indices_to_remove.push(index_u64);
+                        if game.is_chancellor(key) | game.is_president(key) {
+                            inactive_goverment = true;
+                        }
+                    }
+                }
             }
-            if !voters.contains(&index_u64) {
-                indices_to_remove.push(index_u64);
+            // in all other allowed GameSates either the chancellor or president are supposed to be active
+            _ => {
+                inactive_goverment = true;
             }
         }
 
@@ -70,14 +74,10 @@ impl<'info> EliminatePlayer<'info> {
         }
 
         if inactive_goverment {
-            self.update_goverment();
+            self.game_data.next_president();
             self.game_data.next_turn(GameState::ChancellorNomination)?;
         };
 
         Ok(())
-    }
-
-    pub fn update_goverment(&mut self) {
-        self.game_data.next_president();
     }
 }

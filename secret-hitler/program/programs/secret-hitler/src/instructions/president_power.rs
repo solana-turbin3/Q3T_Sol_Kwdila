@@ -17,7 +17,7 @@ pub struct PresidentPower<'info> {
             ],
         bump = game_data.bump,
 
-        constraint = game_data.is_president(president.key) @GameErrorCode::PresidentRoleRequired,
+        constraint = game_data.is_president(president.key()) @GameErrorCode::PresidentRoleRequired,
     )]
     pub game_data: Account<'info, GameData>,
 }

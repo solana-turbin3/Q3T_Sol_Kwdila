@@ -8,7 +8,7 @@ pub enum GameErrorCode {
     PlayerAlreadyJoined,
     #[msg("The game is full")]
     MaxPlayersReached,
-    #[msg("The specified player/pubkey is not in the game")]
+    #[msg("The specified player is not actively in the game")]
     PlayerNotInGame,
     #[msg("The last player(host) Can not leave the game. Consider ending the game instead")]
     LastPlayerLeaving,

@@ -41,7 +41,7 @@ impl<'info> EliminatePlayer<'info> {
             .ok_or(GameErrorCode::TurnStartTimeNotFound)?;
 
         require!(
-            current_time - turn_start_time > 0,
+            current_time - (turn_start_time + game.turn_duration) > 0,
             GameErrorCode::TurnNotFinished
         );
 

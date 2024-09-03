@@ -1,32 +1,26 @@
-use anchor_lang::prelude::AccountInfo; // Import necessary modules.
 use solana_program_test::{ProgramTest, ProgramTestContext};
 use solana_sdk::{
-    account::Account, clock::Clock, entrypoint::ProgramResult, instruction::Instruction,
-    pubkey::Pubkey, signature::Keypair, transaction::Transaction,
+    account::Account, clock::Clock, instruction::Instruction, pubkey::Pubkey, signature::Keypair,
+    transaction::Transaction,
 };
 
-// Type alias for the entry function pointer used to convert the entry function into a ProcessInstruction function pointer.
-pub type ProgramEntry = for<'info> fn(
-    program_id: &Pubkey,
-    accounts: &'info [AccountInfo<'info>],
-    instruction_data: &[u8],
-) -> ProgramResult;
+// // Type alias for the entry function pointer used to convert the entry function into a ProcessInstruction function pointer.
+// pub type ProgramEntry = for<'info> fn(
+//     program_id: &Pubkey,
+//     accounts: &'info [AccountInfo<'info>],
+//     instruction_data: &[u8],
+// ) -> ProgramResult;
 
-// Macro to convert the entry function into a ProcessInstruction function pointer.
-#[macro_export]
-macro_rules! convert_entry {
-    ($entry:expr) => {
-        // Use unsafe block to perform memory transmutation.
-        unsafe { core::mem::transmute::<utils::ProgramEntry, ProcessInstruction>($entry) }
-    };
-}
+// // Macro to convert the entry function into a ProcessInstruction function pointer.
+// #[macro_export]
+// macro_rules! convert_entry {
+//     ($entry:expr) => {
+//         // Use unsafe block to perform memory transmutation.
+//         unsafe { core::mem::transmute::<utils::ProgramEntry, ProcessInstruction>($entry) }
+//     };
+// }
 
 const PROGRAM_ID: Pubkey = secret_hitler::ID_CONST; // Define the program ID constant.
-
-// Function to generate a new keypair for signing transactions.
-pub fn generate_signer() -> solana_sdk::signer::keypair::Keypair {
-    solana_sdk::signer::keypair::Keypair::new()
-}
 
 // Function to get the vault address associated with the signer and mint.
 pub fn get_game_data_address(player: &Pubkey) -> (Pubkey, u8) {
@@ -83,3 +77,4 @@ pub async fn forward_time(program_test_context: &mut ProgramTestContext, seconds
     // Update the sysvar in the program test context with the new Clock state.
     program_test_context.set_sysvar(&clock);
 }
+//

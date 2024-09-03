@@ -10,7 +10,7 @@ pub struct Nomination {
 }
 
 impl Space for Nomination {
-    const INIT_SPACE: usize = 8 + 8 + (4 + 10) + (1 * 4);
+    const INIT_SPACE: usize = 8 + 32 + (4 + 10) + (1 * 3);
 }
 
 impl Nomination {

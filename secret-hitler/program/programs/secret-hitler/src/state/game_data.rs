@@ -113,7 +113,7 @@ impl GameData {
             return;
         }
         self.previous_president_index= Some(self.current_president_index);
-        self.current_president_index = (self.current_chancellor_index.unwrap() + 1) % self.active_players.len() as u8;
+        self.current_president_index = (self.current_president_index + 1) % self.active_players.len() as u8;
     }
 
     pub fn special_election(&mut self, new_president:&Pubkey) {

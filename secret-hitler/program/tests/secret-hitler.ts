@@ -233,13 +233,13 @@ describe("secret-hitler", () => {
     );
     assert.strictEqual(
       gameAfter.currentPresidentIndex.toString(),
-      "4",
+      "3",
       "wrong president index detected",
     );
   });
   it("Nominate chancellor", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    let key = game.allStartingPlayers[game.currentPresidentIndex];
     // find president player keypair
     president = players.find(
       (player) => player.publicKey.toString() === key.toString(),
@@ -250,7 +250,7 @@ describe("secret-hitler", () => {
     await airdrop(provider.connection, president.publicKey);
 
     await program.methods
-      .nominateChancelor(new anchor.BN(0))
+      .nominateChancelor(player_1.publicKey)
       .accountsPartial({
         president: president.publicKey,
         gameData,
@@ -280,23 +280,43 @@ describe("secret-hitler", () => {
   });
   it("Vote chancellor", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    await Promise.all(
-      players.slice(2, 4).map(async (player) => {
-        if (player.publicKey.toString() === president.publicKey.toString()) {
-          return;
-        }
-        await program.methods
-          .voteChancellor({ ja: {} })
-          .accountsPartial({
-            player: player.publicKey,
-            gameData,
-            nomination,
-          })
-          .signers([player])
-          .rpc({ skipPreflight: true })
-          .then(confirmTx);
-      }),
-    );
+    const majorityVote = Math.floor(game.activePlayers.length / 2) + 1;
+    let voteCount = 0;
+
+    for (const player of players) {
+      if (
+        player.publicKey.toString() ===
+        game.allStartingPlayers[game.currentPresidentIndex].toString()
+      ) {
+        continue;
+      }
+
+      await program.methods
+        .voteChancellor({ ja: {} })
+        .accountsPartial({
+          player: player.publicKey,
+          gameData,
+          nomination,
+        })
+        .signers([player])
+        .rpc({ skipPreflight: true })
+        .then(confirmTx);
+
+      voteCount++;
+
+      let nominationAfter = await program.account.nomination.fetch(nomination);
+      if (
+        nominationAfter.ja >= majorityVote ||
+        nominationAfter.nein >= majorityVote
+      ) {
+        break; // Stop voting when we reach a majority
+      }
+
+      if (voteCount >= game.activePlayers.length - 1) {
+        break; // Stop if all players except the president have voted
+      }
+    }
+
     let gameAfter = await program.account.gameData.fetch(gameData);
     assert.strictEqual(
       gameAfter.activePlayers.length.toString(),
@@ -311,7 +331,7 @@ describe("secret-hitler", () => {
   });
   it("president Encat policy", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    let key = game.activePlayers[game.currentPresidentIndex];
     // find president player keypair
     president = players.find(
       (player) => player.publicKey.toString() === key.toString(),
@@ -345,7 +365,7 @@ describe("secret-hitler", () => {
   });
   it("Chancellor Encat policy", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    let key = game.activePlayers[game.currentChancellorIndex.toNumber()];
+    let key = game.activePlayers[game.currentChancellorIndex];
     // find chancellor player keypair
     chancellor = players.find(
       (player) => player.publicKey.toString() === key.toString(),
@@ -379,7 +399,7 @@ describe("secret-hitler", () => {
   });
   it("Nominate chancellor", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    let key = game.activePlayers[game.currentPresidentIndex];
     // find president player keypair
     president = players.find(
       (player) => player.publicKey.toString() === key.toString(),
@@ -390,7 +410,7 @@ describe("secret-hitler", () => {
     await airdrop(provider.connection, president.publicKey);
 
     await program.methods
-      .nominateChancelor(new anchor.BN(4))
+      .nominateChancelor(host.publicKey)
       .accountsPartial({
         president: president.publicKey,
         gameData,
@@ -451,7 +471,7 @@ describe("secret-hitler", () => {
   });
   it("president Encat policy", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    let key = game.activePlayers[game.currentPresidentIndex];
     // find president player keypair
     president = players.find(
       (player) => player.publicKey.toString() === key.toString(),
@@ -485,7 +505,7 @@ describe("secret-hitler", () => {
   });
   it("Chancellor initiate veto", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    let key = game.activePlayers[game.currentChancellorIndex.toNumber()];
+    let key = game.activePlayers[game.currentChancellorIndex];
     // find chancellor player keypair
     chancellor = players.find(
       (player) => player.publicKey.toString() === key.toString(),
@@ -519,7 +539,7 @@ describe("secret-hitler", () => {
   });
   it("accept chancellor veto", async () => {
     let game = await program.account.gameData.fetch(gameData);
-    let key = game.activePlayers[game.currentPresidentIndex.toNumber()];
+    let key = game.activePlayers[game.currentPresidentIndex];
     // find president player keypair
     president = players.find(
       (player) => player.publicKey.toString() === key.toString(),

@@ -1,57 +1,51 @@
-use anchor_lang::prelude::{AccountMeta, Pubkey};
-use anchor_lang::InstructionData;
-use anchor_lang::Space;
-use solana_program_test::*;
-use solana_program_test::*;
-use solana_sdk::{
-    account::Account, clock::Clock, instruction::Instruction, native_token::LAMPORTS_PER_SOL,
-    signature::keypair::Keypair, signer::Signer,
-};
-
-use solana_sdk::entrypoint::ProcessInstruction;
-
-use instructions::*;
+use anchor_lang::prelude::*;
 use secret_hitler::{
-    entry,
     enums::{GameState, PlayerCount},
+    id,
     state::GameData,
 };
+use solana_program_test::*;
+use solana_sdk::{
+    account::Account,
+    instruction::Instruction,
+    native_token::LAMPORTS_PER_SOL,
+    signature::{Keypair, Signer},
+};
+
+mod utils;
 use utils::*;
 
 mod instructions;
-mod utils;
+use instructions::*;
 
-#[tokio::main]
+#[tokio::test]
 async fn test_eliminate_player() {
-    let mut program_test = ProgramTest::default();
-    program_test.add_program("secret_hitler", secret_hitler::id(), convert_entry!(entry));
+    let program_id = id();
+    let mut program_test = ProgramTest::new("secret_hitler", program_id, None);
+    program_test.set_compute_max_units(200_000);
 
-    let nomination = Keypair::new();
     let host = Keypair::new();
+    let player_to_eliminate = Keypair::new();
+    let nomination = Keypair::new();
+
+    // Airdrop to host
     airdrop(&mut program_test, host.pubkey(), 10 * LAMPORTS_PER_SOL);
 
+    // Generate game PDA
+    let (game_pubkey, bump) = get_game_data_address(&host.pubkey());
+
+    // Create initial game state
     let mut all_players = vec![Keypair::new().pubkey(); 4];
     all_players.push(host.pubkey());
 
-    let (game_key, bump) = get_game_data_address(&host.pubkey());
-
-    let mut context = program_test.start_with_context().await;
-
-    let curren_time: i64 = context
-        .banks_client
-        .get_sysvar::<Clock>()
-        .await
-        .unwrap()
-        .unix_timestamp;
-    let mut game = vec![0u8; GameData::INIT_SPACE];
-    GameData {
+    let game_data = GameData {
         host: host.pubkey(),
         turn_duration: 100,
         max_players: 5,
         start_player_count: Some(PlayerCount::Five),
-        all_starting_players: all_players,
+        all_starting_players: all_players.clone(),
         active_players: all_players,
-        turn_started_at: Some(curren_time),
+        turn_started_at: Some(0),
         eliminated_players: vec![],
         fascist_policies_enacted: 0,
         liberal_policies_enacted: 0,
@@ -67,43 +61,64 @@ async fn test_eliminate_player() {
         previous_president_index: None,
         bet_vault_bump: None,
         deposit_vault_bump: None,
-    }
-    .try_serialize(&mut game)
-    .unwrap();
+    };
 
-    context.set_account(
-        &game_key,
+    let mut game_account_data = vec![0; GameData::INIT_SPACE];
+    game_data.try_serialize(&mut game_account_data).unwrap();
+
+    program_test.add_account(
+        game_pubkey,
         Account {
-            lamports: u32::MAX as u64,
-            data: game,
-            owner: secret_hitler::id(),
+            lamports: LAMPORTS_PER_SOL,
+            data: game_account_data,
+            owner: program_id,
             ..Account::default()
         },
     );
 
-    let ix_metas = eliminate_player_metas(&host.pubkey(), &game_key, &nomination.pubkey());
-    let ix_eliminate = build_ix(&secret_hitler::id(), ix_metas, eliminate_player_data());
+    // Create the instruction using the helper functions
+    let ix_metas = eliminate_player_metas(&host.pubkey(), &game_pubkey, &nomination.pubkey());
+    let ix_data = eliminate_player_data();
 
-    // Define the signers for the transaction.
-    let signers = vec![&host];
+    let instruction = Instruction {
+        program_id,
+        accounts: ix_metas,
+        data: ix_data.try_to_vec().unwrap(),
+    };
 
-    // Process the instruction in the simulated environment.
-    let res = utils::process_instruction(
-        &mut program_test_context,
-        ix_initialize,
-        &host.pubkey(),
-        signers,
-    )
-    .await;
+    // Process the instruction
+    let mut context = program_test.start_with_context().await;
 
-    // Assert that the instruction was successful.
-    assert!(res.is_ok());
-}
-// Function to build the actual Solana instruction using the program ID, accounts, and data.
-pub fn build_ix(program_id: &Pubkey, accounts: Vec<AccountMeta>, data: Vec<u8>) -> Instruction {
-    Instruction {
-        program_id: *program_id,
-        accounts,
-        data,
-    }
+    let result = process_instruction(&mut context, instruction, &host.pubkey(), vec![&host]).await;
+    assert!(
+        result.is_ok(),
+        "Failed to process instruction: {:?}",
+        result
+    );
+
+    // Forward time (if needed for your game logic)
+    forward_time(&mut context, 60).await;
+
+    // Verify the final state
+    let game_account = context
+        .banks_client
+        .get_account(game_pubkey)
+        .await
+        .unwrap()
+        .unwrap();
+    let updated_game_data: GameData =
+        GameData::try_deserialize(&mut game_account.data.as_ref()).unwrap();
+
+    assert!(
+        !updated_game_data
+            .active_players
+            .contains(&player_to_eliminate.pubkey()),
+        "Player should be removed from active players"
+    );
+    assert!(
+        updated_game_data
+            .eliminated_players
+            .contains(&player_to_eliminate.pubkey()),
+        "Player should be added to eliminated players"
+    );
 }

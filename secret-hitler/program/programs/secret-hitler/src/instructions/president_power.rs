@@ -17,7 +17,7 @@ pub struct PresidentPower<'info> {
             ],
         bump = game_data.bump,
 
-        constraint = game_data.is_president(president.key) @GameErrorCode::PresidentRoleRequired,
+        constraint = game_data.is_president(president.key)? @GameErrorCode::PresidentRoleRequired,
     )]
     pub game_data: Account<'info, GameData>,
 }
@@ -32,21 +32,21 @@ impl<'info> PresidentPower<'info> {
 
         match game.game_state {
             GameState::PresidentialPowerElection => {
-                game.special_election(targeted_player);
+                game.special_election(targeted_player)?;
                 game.next_turn(GameState::ChancellorNomination)?;
             }
             GameState::PresidentialPowerPeek => {
                 //                                                  //
                 //              make request to server              //
                 //                                                  //
-                game.next_president();
+                game.next_president()?;
                 game.next_turn(GameState::ChancellorNomination)?;
             }
             GameState::PresidentialPowerInvestigate => {
                 //                                                  //
                 //              make request to server              //
                 //                                                  //
-                game.next_president();
+                game.next_president()?;
                 game.next_turn(GameState::ChancellorNomination)?;
             }
             GameState::PresidentialPowerExecution => {
@@ -58,7 +58,7 @@ impl<'info> PresidentPower<'info> {
                     .unwrap();
                 game.eliminated_players.push(player);
                 game.active_players.remove(player_index);
-                game.next_president();
+                game.next_president()?;
                 game.next_turn(GameState::ChancellorNomination)?;
             }
             _ => return err!(GameErrorCode::InvalidGameState),

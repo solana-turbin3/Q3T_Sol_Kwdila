@@ -28,7 +28,7 @@ pub struct NominateChancellor<'info> {
             ],
         bump = game_data.bump,
 
-        constraint = game_data.is_president(president.key) @GameErrorCode::PresidentRoleRequired,
+        constraint = game_data.is_president(president.key)? @GameErrorCode::PresidentRoleRequired,
         constraint = GameState::ChancellorNomination == game_data.game_state @GameErrorCode::InvalidGameState,
     )]
     pub game_data: Account<'info, GameData>,

@@ -56,7 +56,7 @@ impl<'info> EliminatePlayer<'info> {
                     let index_u8 = index as u8;
                     if !voters.contains(&index_u8) {
                         indices_to_remove.push(index_u8 as usize);
-                        if game.is_chancellor(key) | game.is_president(key) {
+                        if game.is_chancellor(key)? | game.is_president(key)? {
                             inactive_goverment = true;
                         }
                     }
@@ -70,13 +70,23 @@ impl<'info> EliminatePlayer<'info> {
 
         // Remove players in reverse order to avoid shifting errors
         for index in indices_to_remove.iter().rev() {
-            self.game_data.active_players.remove(*index as usize);
+            game.active_players.remove(*index as usize);
         }
 
         if inactive_goverment {
-            self.game_data.next_president();
-            self.game_data.next_turn(GameState::ChancellorNomination)?;
+            game.next_president()?;
+            game.next_turn(GameState::ChancellorNomination)?;
         };
+
+        let game_copy = &self.game_data;
+
+        msg!("current president {}", game_copy.current_president_index);
+        msg!("prev president {:?}", game_copy.previous_president_index);
+        msg!("current president {:?}", game_copy.current_chancellor_index);
+        msg!(
+            "current president {:?}",
+            game_copy.previous_chancellor_index
+        );
 
         Ok(())
     }

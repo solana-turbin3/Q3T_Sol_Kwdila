@@ -85,7 +85,7 @@ describe("secret-hitler", () => {
         depositVault,
       })
       .signers([host])
-      .rpc()
+      .rpc({ skipPreflight: true })
       .then(confirmTx);
 
     let gameAfter = await program.account.gameData.fetch(gameData);
@@ -236,6 +236,20 @@ describe("secret-hitler", () => {
       "3",
       "wrong president index detected",
     );
+  });
+  it("try to eliminate player", async () => {
+    let gameBefore = await program.account.gameData.fetch(gameData);
+
+    await program.methods
+      .eliminateInactivePlayer()
+      .accountsPartial({
+        player: host.publicKey,
+        gameData,
+        nomination: null,
+      })
+      .signers([host])
+      .rpc({ skipPreflight: true })
+      .then(confirmTx);
   });
   it("Nominate chancellor", async () => {
     let game = await program.account.gameData.fetch(gameData);

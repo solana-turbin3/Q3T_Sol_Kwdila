@@ -54,10 +54,10 @@ async fn test_eliminate_player() {
         liberal_policies_enacted: 0,
         failed_elections: 0,
         is_special_election: false,
-        current_president_index: 4,
-        previous_president_index: None,
-        current_chancellor_index: None,
-        previous_chancellor_index: None,
+        current_president_index: 4,        //  0 ???
+        previous_president_index: Some(0), //  Some(4)
+        current_chancellor_index: None,    //  None
+        previous_chancellor_index: None,   //  None
         bump: game_bump,
         deposit_vault_bump: None,
         bet_vault_bump: None,
@@ -66,13 +66,14 @@ async fn test_eliminate_player() {
     let mut game_account_data = vec![];
     game_struct.try_serialize(&mut game_account_data).unwrap();
 
+    msg!("{:?}", game_account_data);
+
     let mut account = AccountSharedData::new(u32::MAX as u64, GameData::INIT_SPACE, &id());
     account.set_data_from_slice(&game_account_data);
 
     context.set_account(&game_pubkey, &account);
 
     forward_time(&mut context, 150).await;
-
     // Execute take instruction
     let mut transaction = Transaction::new_with_payer(
         &[eliminate_player(&host.pubkey(), &game_pubkey, None)],

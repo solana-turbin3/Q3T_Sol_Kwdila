@@ -19,11 +19,11 @@ pub struct EnactPolicy<'info> {
         bump = game_data.bump,
 
         // Ensure player is either the current president or chancellor
-        constraint = game_data.is_chancellor(player.key) || game_data.is_president(player.key) @GameErrorCode::PlayerNotInGovernment,
+        constraint = game_data.is_chancellor(player.key)? || game_data.is_president(player.key)? @GameErrorCode::PlayerNotInGovernment,
         // president needs to enact policy in LegistlativePresident state
-        constraint = game_data.is_president(player.key) == (game_data.game_state == GameState::LegislativePresident) @GameErrorCode::PresidentPolicyError,
+        constraint = game_data.is_president(player.key)? == (game_data.game_state == GameState::LegislativePresident) @GameErrorCode::PresidentPolicyError,
         // Chancellor needs to enact policy in LegistlativeChancellor state
-        constraint = game_data.is_chancellor(player.key) == (game_data.game_state == GameState::LegislativeChancellor) @GameErrorCode::ChancellorPolicyError,
+        constraint = game_data.is_chancellor(player.key)? == (game_data.game_state == GameState::LegislativeChancellor) @GameErrorCode::ChancellorPolicyError,
     )]
     pub game_data: Account<'info, GameData>,
 }
@@ -48,7 +48,7 @@ impl<'info> EnactPolicy<'info> {
                     return Ok(());
                 }
                 if game.fascist_policies_enacted == 0 {
-                    game.next_president();
+                    game.next_president()?;
                     game.next_turn(GameState::ChancellorNomination)?;
                     return Ok(());
                 }
@@ -64,7 +64,7 @@ impl<'info> EnactPolicy<'info> {
                 match game.get_presidential_power_state(fascist_board) {
                     Some(state) => game.next_turn(state)?,
                     None => {
-                        game.next_president();
+                        game.next_president()?;
                         game.next_turn(GameState::ChancellorNomination)?;
                     }
                 }

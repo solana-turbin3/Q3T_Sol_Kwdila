@@ -17,7 +17,7 @@ pub struct PresidentVeto<'info> {
             ],
         bump = game_data.bump,
 
-        constraint = game_data.is_president(president.key) @GameErrorCode::PresidentRoleRequired,
+        constraint = game_data.is_president(president.key)? @GameErrorCode::PresidentRoleRequired,
         constraint = GameState::LegislativePresidentVeto == game_data.game_state @GameErrorCode::InvalidGameState,
     )]
     pub game_data: Account<'info, GameData>,
@@ -29,7 +29,7 @@ impl<'info> PresidentVeto<'info> {
 
         match accept_veto {
             true => {
-                game.next_president();
+                game.next_president()?;
                 game.next_turn(GameState::ChancellorNomination)?;
                 game.failed_elections += 1;
             }

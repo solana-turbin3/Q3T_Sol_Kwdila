@@ -1,5 +1,5 @@
 use anchor_lang::prelude::{Pubkey, ToAccountMetas};
-use secret_hitler::ID_CONST as PROGRAM_ID;
+use secret_hitler::id;
 use solana_sdk::instruction::Instruction;
 
 #[allow(dead_code)]
@@ -9,7 +9,7 @@ pub fn eliminate_player(
     nomination: Option<Pubkey>,
 ) -> Instruction {
     Instruction {
-        program_id: PROGRAM_ID,
+        program_id: id(),
         accounts: ToAccountMetas::to_account_metas(
             &secret_hitler::accounts::EliminatePlayer {
                 player: *player,

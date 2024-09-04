@@ -15,7 +15,7 @@ pub struct ChancellorVeto<'info> {
         bump = game_data.bump,
 
         // Chancellor needs to veto vote in LegistlativeChancellor state
-        constraint = game_data.is_chancellor(player.key) @ GameErrorCode::ChancellorRoleNeeded,
+        constraint = game_data.is_chancellor(player.key)? @ GameErrorCode::ChancellorRoleNeeded,
         constraint = game_data.game_state == GameState::LegislativeChancellor @GameErrorCode::InvalidGameState,
     )]
     pub game_data: Account<'info, GameData>,

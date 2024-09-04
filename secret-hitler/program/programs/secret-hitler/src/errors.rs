@@ -50,4 +50,6 @@ pub enum GameErrorCode {
     StartPlayerCountNotFound,
     #[msg("Could not find the turn started at timestamp")]
     TurnStartTimeNotFound,
+    #[msg("Nomination account is needed to check for inactive voters for chancellor nomination game state")]
+    NominationAccountNotFound,
 }

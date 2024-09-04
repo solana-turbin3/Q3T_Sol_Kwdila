@@ -18,7 +18,7 @@ pub struct EliminatePlayer<'info> {
         ],
         bump = nomination.bump,
     )]
-    pub nomination: Account<'info, Nomination>,
+    pub nomination: Option<Account<'info, Nomination>>,
     #[account(
         mut,
         seeds = [
@@ -28,6 +28,7 @@ pub struct EliminatePlayer<'info> {
         bump = game_data.bump,
         constraint = ![FascistVictoryElection,FascistVictoryPolicy,LiberalVictoryExecution,LiberalVictoryPolicy,Setup]
             .contains(&game_data.game_state) @GameErrorCode::InvalidGameState,
+        constraint= (game_data.game_state == GameState::ChancellorVoting) == nomination.is_some() @GameErrorCode::NominationAccountNotFound,
     )]
     pub game_data: Account<'info, GameData>,
 }
@@ -50,7 +51,7 @@ impl<'info> EliminatePlayer<'info> {
 
         match game.game_state {
             GameState::ChancellorVoting => {
-                let voters = &self.nomination.voters_index;
+                let voters = &self.nomination.clone().unwrap().voters_index;
                 for (index, key) in game.active_players.iter().enumerate() {
                     let index_u8 = index as u8;
                     if !voters.contains(&index_u8) {

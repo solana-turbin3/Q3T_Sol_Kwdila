@@ -23,12 +23,13 @@ use solana_sdk::{
 const PROGRAM_ID: Pubkey = secret_hitler::ID_CONST; // Define the program ID constant.
 
 // Function to get the vault address associated with the signer and mint.
-pub fn get_game_data_address(player: &Pubkey) -> (Pubkey, u8) {
+pub fn get_game_data_address(player: Pubkey) -> (Pubkey, u8) {
     // Find the program-derived address (PDA) for the vault associated with the signer and mint.
     Pubkey::find_program_address(&[b"secret_hitler", player.to_bytes().as_ref()], &PROGRAM_ID)
 }
 
 // Function to add an account with the specified amount of lamports to the program test.
+#[allow(dead_code)]
 pub fn airdrop(program_test: &mut ProgramTest, address: Pubkey, amount: u64) {
     program_test.add_account(
         address,
@@ -37,6 +38,7 @@ pub fn airdrop(program_test: &mut ProgramTest, address: Pubkey, amount: u64) {
 }
 
 // Function to process an instruction in the program test context and ensure it is finalized.
+#[allow(dead_code)]
 pub async fn process_instruction(
     program_test_context: &mut ProgramTestContext,
     instruction: Instruction,
@@ -60,6 +62,7 @@ pub async fn process_instruction(
 }
 
 // Function to forward the program test context time by a specified number of seconds.
+#[allow(dead_code)]
 pub async fn forward_time(program_test_context: &mut ProgramTestContext, seconds: i64) {
     // Get the current clock state from the program test context.
     let mut clock = program_test_context

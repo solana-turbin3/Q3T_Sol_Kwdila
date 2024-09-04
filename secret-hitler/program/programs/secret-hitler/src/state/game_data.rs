@@ -38,7 +38,7 @@ pub struct GameData {
 impl Space for GameData {
     const INIT_SPACE: usize = 
     8               // anchor descriminator
-    + 32 * 1        // Pubkey
+    + 32            // Pubkey
     + 4 + 32 * 10   // Vec<Pubkey>
     + 4 + 32 * 10   // Vec<Pubkey>
     + 4 + 32 * 2    // Vec<Pubkey>

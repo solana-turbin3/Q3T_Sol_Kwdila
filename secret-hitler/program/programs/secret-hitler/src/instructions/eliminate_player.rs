@@ -78,16 +78,6 @@ impl<'info> EliminatePlayer<'info> {
             game.next_turn(GameState::ChancellorNomination)?;
         };
 
-        let game_copy = &self.game_data;
-
-        msg!("current president {}", game_copy.current_president_index);
-        msg!("prev president {:?}", game_copy.previous_president_index);
-        msg!("current president {:?}", game_copy.current_chancellor_index);
-        msg!(
-            "current president {:?}",
-            game_copy.previous_chancellor_index
-        );
-
         Ok(())
     }
 }

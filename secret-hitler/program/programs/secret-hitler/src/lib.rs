@@ -11,7 +11,7 @@ pub mod state;
 pub use enums::*;
 pub use instructions::*;
 
-declare_id!("G7as2i9QvsjGc58ppZ7WU3QoPxRxiB62a2dFLLbBAePS");
+declare_id!("FxKWd5DzXvHPVfrGo3DvXgTeG25TGUGUAFvjQ1zSMp1B");
 
 #[program]
 pub mod secret_hitler {

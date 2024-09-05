@@ -7,6 +7,7 @@ use secret_hitler::{
 use solana_program_test::*;
 use solana_sdk::{
     account::AccountSharedData,
+    native_token::LAMPORTS_PER_SOL,
     signature::{Keypair, Signer},
     transaction::Transaction,
 };
@@ -23,6 +24,8 @@ async fn test_eliminate_player() {
     program_test.set_compute_max_units(200_000);
 
     let host = Keypair::new();
+
+    airdrop(&mut program_test, host.pubkey(), 10 * LAMPORTS_PER_SOL);
 
     // Process the instruction
     let mut context = program_test.start_with_context().await;
@@ -66,14 +69,13 @@ async fn test_eliminate_player() {
     let mut game_account_data = vec![];
     game_struct.try_serialize(&mut game_account_data).unwrap();
 
-    msg!("{:?}", game_account_data);
-
     let mut account = AccountSharedData::new(u32::MAX as u64, GameData::INIT_SPACE, &id());
     account.set_data_from_slice(&game_account_data);
 
     context.set_account(&game_pubkey, &account);
 
     forward_time(&mut context, 150).await;
+
     // Execute take instruction
     let mut transaction = Transaction::new_with_payer(
         &[eliminate_player(&host.pubkey(), &game_pubkey, None)],

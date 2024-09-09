@@ -1,5 +1,6 @@
 use anchor_lang::{
-    prelude::*, system_program::{transfer, Transfer}
+    prelude::*,
+    system_program::{transfer, Transfer},
 };
 
 use crate::state::{GameData, PlayerData};
@@ -70,13 +71,20 @@ impl<'info> LeaveGame<'info> {
                 };
 
                 let game_key = self.game_data.key().to_bytes();
-                let seeds=[        
+                let seeds = [
                     b"deposit_vault",
                     game_key.as_ref(),
-                    &[self.game_data.deposit_vault_bump.ok_or(GameErrorCode::DepositNotFound)?]
-                    ];
+                    &[self
+                        .game_data
+                        .deposit_vault_bump
+                        .ok_or(GameErrorCode::DepositNotFound)?],
+                ];
                 let signer_seeds = &[&seeds[..]];
-                let ctx = CpiContext::new_with_signer(self.system_program.to_account_info(), accounts,signer_seeds);
+                let ctx = CpiContext::new_with_signer(
+                    self.system_program.to_account_info(),
+                    accounts,
+                    signer_seeds,
+                );
                 transfer(ctx, amount)?
             }
             None => (),
@@ -94,13 +102,20 @@ impl<'info> LeaveGame<'info> {
                 };
 
                 let game_key = self.game_data.key().to_bytes();
-                let seeds=[        
+                let seeds = [
                     b"bet_vault",
                     game_key.as_ref(),
-                    &[self.game_data.bet_vault_bump.ok_or(GameErrorCode::BetNotFound)?]
-                    ];
-                let signer_seeds = &[&seeds[..]];                
-                let ctx = CpiContext::new_with_signer(self.system_program.to_account_info(), accounts,signer_seeds);
+                    &[self
+                        .game_data
+                        .bet_vault_bump
+                        .ok_or(GameErrorCode::BetNotFound)?],
+                ];
+                let signer_seeds = &[&seeds[..]];
+                let ctx = CpiContext::new_with_signer(
+                    self.system_program.to_account_info(),
+                    accounts,
+                    signer_seeds,
+                );
                 transfer(ctx, amount)?
             }
             None => (),

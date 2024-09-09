@@ -1,6 +1,12 @@
-use anchor_lang::{prelude::*, system_program::{transfer, Transfer}};
+use anchor_lang::{
+    prelude::*,
+    system_program::{transfer, Transfer},
+};
 
-use crate::{state::{ GameData, PlayerData}, GameErrorCode};
+use crate::{
+    state::{GameData, PlayerData},
+    GameErrorCode,
+};
 
 #[derive(Accounts)]
 pub struct EndGame<'info> {
@@ -53,25 +59,33 @@ pub struct EndGame<'info> {
 }
 
 impl<'info> EndGame<'info> {
-    pub fn refund_host(&mut self) ->Result<()>{
+    pub fn refund_host(&mut self) -> Result<()> {
         match self.game_data.entry_deposit {
             Some(_amount) => {
-                let vault = self.deposit_vault
-                .as_ref()
-                .ok_or(GameErrorCode::DepositNotFound)?;
+                let vault = self
+                    .deposit_vault
+                    .as_ref()
+                    .ok_or(GameErrorCode::DepositNotFound)?;
                 let accounts = Transfer {
                     to: self.host.to_account_info(),
                     from: vault.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let game_key = self.game_data.key().to_bytes();
-                let seeds=[        
+                let seeds = [
                     b"deposit_vault",
                     game_key.as_ref(),
-                    &[self.game_data.deposit_vault_bump.ok_or(GameErrorCode::DepositNotFound)?]
-                    ];
+                    &[self
+                        .game_data
+                        .deposit_vault_bump
+                        .ok_or(GameErrorCode::DepositNotFound)?],
+                ];
                 let signer_seeds = &[&seeds[..]];
-                let ctx = CpiContext::new_with_signer(self.system_program.to_account_info(), accounts,signer_seeds);
+                let ctx = CpiContext::new_with_signer(
+                    self.system_program.to_account_info(),
+                    accounts,
+                    signer_seeds,
+                );
                 transfer(ctx, vault.lamports())?
             }
             None => (),
@@ -79,23 +93,27 @@ impl<'info> EndGame<'info> {
 
         match self.game_data.bet_amount {
             Some(_amount) => {
-                let vault = self.bet_vault
-                        .as_ref()
-                        .ok_or(GameErrorCode::BetNotFound)?;
+                let vault = self.bet_vault.as_ref().ok_or(GameErrorCode::BetNotFound)?;
                 let accounts = Transfer {
                     to: self.host.to_account_info(),
-                    from: 
-                        vault.to_account_info(), //this is checked in game_data account constraints
+                    from: vault.to_account_info(), //this is checked in game_data account constraints
                 };
 
                 let game_key = self.game_data.key().to_bytes();
-                let seeds=[        
+                let seeds = [
                     b"bet_vault",
                     game_key.as_ref(),
-                    &[self.game_data.bet_vault_bump.ok_or(GameErrorCode::BetNotFound)?]
-                    ];
-                let signer_seeds = &[&seeds[..]];                
-                let ctx = CpiContext::new_with_signer(self.system_program.to_account_info(), accounts,signer_seeds);
+                    &[self
+                        .game_data
+                        .bet_vault_bump
+                        .ok_or(GameErrorCode::BetNotFound)?],
+                ];
+                let signer_seeds = &[&seeds[..]];
+                let ctx = CpiContext::new_with_signer(
+                    self.system_program.to_account_info(),
+                    accounts,
+                    signer_seeds,
+                );
                 transfer(ctx, vault.lamports())?
             }
             None => (),

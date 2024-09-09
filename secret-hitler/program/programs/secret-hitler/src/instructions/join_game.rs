@@ -3,11 +3,8 @@ use anchor_lang::{
     system_program::{transfer, Transfer},
 };
 
-use crate::{GameState, GameErrorCode};
-use crate::state::{
-    GameData,
-    PlayerData,
-};
+use crate::state::{GameData, PlayerData};
+use crate::{GameErrorCode, GameState};
 
 #[derive(Accounts)]
 pub struct JoinGame<'info> {
@@ -64,17 +61,20 @@ pub struct JoinGame<'info> {
 
 impl<'info> JoinGame<'info> {
     pub fn add_player(&mut self, bumps: JoinGameBumps) -> Result<()> {
-
         match self.game_data.entry_deposit {
             Some(amount) => {
                 let accounts = Transfer {
                     from: self.player.to_account_info(),
-                    to: self.deposit_vault.as_ref().ok_or(GameErrorCode::DepositNotFound)?.to_account_info(), // this is checked in game_data account constraints
+                    to: self
+                        .deposit_vault
+                        .as_ref()
+                        .ok_or(GameErrorCode::DepositNotFound)?
+                        .to_account_info(), // this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
                 transfer(ctx, amount)?
-            },
+            }
             None => (),
         }
 
@@ -82,12 +82,16 @@ impl<'info> JoinGame<'info> {
             Some(amount) => {
                 let accounts = Transfer {
                     from: self.player.to_account_info(),
-                    to: self.bet_vault.as_ref().ok_or(GameErrorCode::BetNotFound)?.to_account_info(), // this is checked in game_data account constraints
+                    to: self
+                        .bet_vault
+                        .as_ref()
+                        .ok_or(GameErrorCode::BetNotFound)?
+                        .to_account_info(), // this is checked in game_data account constraints
                 };
 
                 let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
                 transfer(ctx, amount)?
-            },
+            }
             None => (),
         }
 
@@ -95,7 +99,7 @@ impl<'info> JoinGame<'info> {
 
         self.player_data.set_inner(PlayerData {
             role: None,
-            is_investigated:false,
+            is_investigated: false,
             bump: bumps.player_data,
         });
 

@@ -1,6 +1,10 @@
 use anchor_lang::prelude::*;
 
-use crate::{state::{GameData, PlayerData}, GameErrorCode, GameState::*};
+use crate::{
+    state::{GameData, PlayerData},
+    GameErrorCode,
+    GameState::*,
+};
 
 #[derive(Accounts)]
 pub struct ResolveGame<'info> {
@@ -34,7 +38,7 @@ pub struct ResolveGame<'info> {
         ],
         bump = game_data.bet_vault_bump.ok_or(GameErrorCode::BetNotFound)?,
     )]
-    pub bet_vault: Option<SystemAccount<'info>>,    
+    pub bet_vault: Option<SystemAccount<'info>>,
 
     #[account(
         mut,
@@ -51,6 +55,4 @@ pub struct ResolveGame<'info> {
     )]
     pub game_data: Account<'info, GameData>,
 }
-impl<'info> ResolveGame<'info> {
-
-}
+impl<'info> ResolveGame<'info> {}

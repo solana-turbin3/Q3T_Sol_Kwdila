@@ -1,17 +1,6 @@
-use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
-#[derive(Deserialize, Serialize)]
-pub struct InitGameRequest {
-    pub game_pubkey: String,
-}
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone, FromRow)]
 pub struct Game {
-    pub uuid: String,
     pub pubkey: String,
-}
-
-impl Game {
-    pub fn new(uuid: String, pubkey: String) -> Game {
-        Game { uuid, pubkey }
-    }
 }

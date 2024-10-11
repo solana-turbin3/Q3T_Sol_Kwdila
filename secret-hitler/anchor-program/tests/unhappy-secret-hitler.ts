@@ -36,30 +36,28 @@
 //     program.programId,
 //   );
 //   it("Can not init game without the bet or deposit", async () => {
+//     let result = "this should fail";
 //     airdrop(provider.connection, host.publicKey);
-//     await program.methods
-//       .initializeGame(maxPlayers, turnDuration, betAmount, depositAmount)
-//       .accountsPartial({
-//         host: host.publicKey,
-//         gameData: gameData,
-//         playerData: hostData,
-//         betVault: null,
-//         depositVault: null,
-//       })
-//       .signers([player_1])
-//       .rpc({ skipPreflight: true })
-//       .then(confirmTx);
-//     let gameAfter = await program.account.gameData.fetch(gameData);
-//     assert.strictEqual(
-//       gameAfter.activePlayers.length.toString(),
-//       "1",
-//       "expected player count is 1 but got " + gameAfter.activePlayers.length,
-//     );
-//     assert.strictEqual(
-//       gameAfter.bump.toString(),
-//       gameDataBump.toString(),
-//       "wrong bump detected",
-//     );
+//     try {
+//       await program.methods
+//         .initializeGame(maxPlayers, turnDuration, betAmount, depositAmount)
+//         .accountsPartial({
+//           host: host.publicKey,
+//           gameData: gameData,
+//           playerData: hostData,
+//           betVault: null,
+//           depositVault: null,
+//         })
+//         .signers([host])
+//         .rpc()
+//         .then(confirmTx);
+//     } catch (e) {
+//       console.log(e);
+//       let error = anchor.AnchorError.parse(e.logs);
+//       assert.strictEqual(error.error.errorCode.code, "DepositNotFound");
+//       result = "failed";
+//     }
+//     assert.strictEqual(result, "failed");
 //   });
 // });
 

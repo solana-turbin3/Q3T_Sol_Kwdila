@@ -1,0 +1,158 @@
+{
+  "id": "anchor_001",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "make.rs",
+  "code_snippet": "#[derive(Accounts)]
+#[instruction(seed:u64)]
+pub struct Make<'info> {
+    #[account(mut)]
+    pub maker: Signer<'info>,
+    pub mint_a: InterfaceAccount<'info, Mint>,
+    pub mint_b: InterfaceAccount<'info, Mint>,
+
+    #[account(mut, associated_token::mint = mint_a, associated_token::authority = maker)]
+    pub maker_ata_a: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        init,payer = maker,
+        space = 8 + Escrow::INIT_SPACE,
+        seeds = [
+            b"escrow",
+            maker.key().as_ref(),
+            seed.to_le_bytes().as_ref()
+        ],
+        bump
+    )]
+    pub escrow: Account<'info, Escrow>,
+
+    #[account(
+        init,
+        seeds=[
+            b"escrow_vault",
+            escrow.key().to_bytes().as_ref(),
+        ],
+        payer =maker,
+        token::authority = escrow,
+        token::mint=mint_a,
+        bump
+    )]
+    pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Interface<'info, TokenInterface>,
+}",
+  "comments": "// This struct is an anchor context that holds nessesary accounts for its functions",
+  "dependencies": ["Escrow","derive","instruction"],
+  "line_numbers": [9, 47],
+  "docstring": "make anchor Context to Initiate and transfer into Escrow PDA",
+  "related_functions": []
+},
+{
+  "id": "anchor_002",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "make.rs",
+  "code_snippet": "pub fn initialize_escrow(
+        &mut self,
+        seed: u64,
+        recieve_amount: u64,
+        duration: u64,
+        is_mutable: bool,
+        bumps: MakeBumps,
+    ) -> Result<()> {
+        self.escrow.set_inner(Escrow {
+            seed,
+            maker: self.maker.key(),
+            mint_a: self.mint_a.key(),
+            mint_b: self.mint_b.key(),
+            recieve_amount,
+            expiry: 0,
+            is_mutable,
+            escrow_bump: bumps.escrow,
+            vault_bump: bumps.vault,
+        });
+        self.escrow.set_expiry_relative(duration)?;
+        Ok(())
+}",
+  "comments": "// This function intialites a PDA account of type Escrow for a Signer called 'maker'",
+  "dependencies": ["Make","set_expiry_relative"],
+  "line_numbers": [49, 70],
+  "docstring": "Initiate Escrow pda for solana escrow program.",
+  "related_functions": ["deposit_into_vault"]
+},
+{
+  "id": "anchor_003",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "make.rs",
+  "code_snippet": "pub fn deposit_into_escrow(&mut self) -> Result<()> {
+        let accounts = TransferChecked {
+            from: self.maker_ata_a.to_account_info(),
+            mint: self.mint_a.to_account_info(),
+            to: self.vault.to_account_info(),
+            authority: self.escrow.to_account_info(),
+        };
+
+        let ctx = CpiContext::new(self.token_program.to_account_info(), accounts);
+
+        transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;
+        Ok(())
+    }",
+  "comments": "// This function transfers tokens from maker_ata associated token account into a vault owned by the escrow PDA",
+  "dependencies": ["Make","transfer_checked"],
+  "line_numbers": [71, 83],
+  "docstring": "Transfer tokens from a associated token account into a vault with PDA authority",
+  "related_functions": ["initiate_escrow"]
+},
+{
+  "id": "anchor_004",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "escrow.rs",
+  "code_snippet": "#[account]
+#[derive(InitSpace)]
+pub struct Escrow {
+    pub seed: u64,
+    pub maker: Pubkey,
+    pub mint_a: Pubkey,
+    
+    pub mint_b: Pubkey,
+    pub recieve_amount: u64,
+    pub expiry: u64,
+    pub is_mutable: bool,
+    pub escrow_bump: u8,
+    pub vault_bump: u8,
+}
+impl Escrow {
+    // 8 bytes descriminator, 32 bytes Pubkey, 8 bytes u64, 1 byte u8,! byte bool;
+    pub const LEN: usize = 8 + 3 * 32 + 3 * 8 + 3 * 1 + 1;
+
+    pub fn check_expiry(&self) -> Result<()> {
+        require!(self.expiry > Clock::get()?.slot, EscrowError::Expired);
+        Ok(())
+    }
+
+    pub fn set_expiry_relative(&mut self, expiry: u64) -> Result<()> {
+        require!(expiry.lt(&100_000), EscrowError::MaxExpiryExceeded);
+        self.set_expiry_absolute(match expiry > 0 {
+            true => Clock::get()?.slot + expiry,
+            false => 0,
+        });
+        Ok(())
+    }
+
+    pub fn set_expiry_absolute(&mut self, expiry: u64) {
+        self.expiry = expiry;
+    }
+}",
+  "comments": "// This struct is an anchor account representing an Escrow PDA",
+  "dependencies": ["account macro","derive"],
+  "line_numbers": [5, 40],
+  "docstring": "Escrow pda for anchor escrow program.",
+  "related_functions": []
+},

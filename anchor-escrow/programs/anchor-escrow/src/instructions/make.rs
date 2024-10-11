@@ -29,7 +29,17 @@ pub struct Make<'info> {
     )]
     pub escrow: Account<'info, Escrow>,
 
-    #[account(init,payer =maker,associated_token::authority = escrow,associated_token::mint=mint_a)]
+    #[account(
+        init,
+        seeds=[
+            b"escrow_vault",
+            escrow.key().to_bytes().as_ref(),
+        ],
+        payer =maker,
+        token::authority = escrow,
+        token::mint=mint_a,
+        bump
+    )]
     pub vault: InterfaceAccount<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -39,17 +49,23 @@ impl<'info> Make<'info> {
     pub fn initialize_escrow(
         &mut self,
         seed: u64,
-        bumps: MakeBumps,
         recieve_amount: u64,
+        duration: u64,
+        is_mutable: bool,
+        bumps: MakeBumps,
     ) -> Result<()> {
         self.escrow.set_inner(Escrow {
             seed,
             maker: self.maker.key(),
             mint_a: self.mint_a.key(),
             mint_b: self.mint_b.key(),
-            bump: bumps.escrow,
             recieve_amount,
+            expiry: 0,
+            is_mutable,
+            escrow_bump: bumps.escrow,
+            vault_bump: bumps.vault,
         });
+        self.escrow.set_expiry_relative(duration)?;
         Ok(())
     }
     pub fn deposit_into_escrow(&mut self) -> Result<()> {
@@ -60,7 +76,7 @@ impl<'info> Make<'info> {
             authority: self.escrow.to_account_info(),
         };
 
-        let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
+        let ctx = CpiContext::new(self.token_program.to_account_info(), accounts);
 
         transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;
         Ok(())

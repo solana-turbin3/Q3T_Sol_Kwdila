@@ -48,7 +48,7 @@ impl<'info> Take<'info> {
     pub fn check_expiry(&self) -> Result<()> {
         self.escrow.check_expiry()
     }
-    pub fn deposit_into_vault(&mut self) -> Result<()> {
+    pub fn send_to_maker(&mut self) -> Result<()> {
         let accounts = TransferChecked {
             from: self.taker_ata_b.to_account_info(),
             mint: self.mint_b.to_account_info(),
@@ -60,6 +60,9 @@ impl<'info> Take<'info> {
 
         transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;
 
+        Ok(())
+    }
+    pub fn withdraw_from_vault(&mut self) -> Result<()> {
         let accounts = TransferChecked {
             from: self.vault.to_account_info(),
             mint: self.mint_a.to_account_info(),
@@ -83,29 +86,6 @@ impl<'info> Take<'info> {
         );
 
         transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;
-        Ok(())
-    }
-    pub fn withdraw_from_vault(&mut self) -> Result<()> {
-        let accounts = TransferChecked {
-            from: self.maker_ata_a.to_account_info(),
-            mint: self.mint_a.to_account_info(),
-            to: self.vault.to_account_info(),
-            authority: self.escrow.to_account_info(),
-        };
-
-        let maker_key = self.maker.key();
-        let escrow_seed = self.escrow.seed.to_le_bytes();
-        let signer_seeds = &[
-            b"escrow",
-            maker_key.as_ref(),
-            escrow_seed.as_ref(),
-            &[self.escrow.escrow_bump],
-        ];
-        let binding = [&signer_seeds[..]];
-        let ctx =
-            CpiContext::new_with_signer(self.system_program.to_account_info(), accounts, &binding);
-
-        transfer_checked(ctx, self.vault.amount, self.mint_a.decimals)?;
         Ok(())
     }
     pub fn close_vault(&self) -> Result<()> {

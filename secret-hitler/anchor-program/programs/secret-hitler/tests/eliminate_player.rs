@@ -57,10 +57,10 @@ async fn test_eliminate_player() {
         liberal_policies_enacted: 0,
         failed_elections: 0,
         is_special_election: false,
-        current_president_index: 4,        //  0 ???
-        previous_president_index: Some(0), //  Some(4)
-        current_chancellor_index: None,    //  None
-        previous_chancellor_index: None,   //  None
+        current_president_index: 4,
+        previous_president_index: None, //  Panics when tested whith None
+        current_chancellor_index: None,
+        previous_chancellor_index: None,
         bump: game_bump,
         deposit_vault_bump: None,
         bet_vault_bump: None,

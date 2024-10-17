@@ -30,7 +30,7 @@ pub mod anchor_escrow {
     }
     pub fn take(ctx: Context<Take>) -> Result<()> {
         ctx.accounts.check_expiry()?;
-        ctx.accounts.deposit_into_vault()?;
+        ctx.accounts.send_to_maker()?;
         ctx.accounts.withdraw_from_vault()?;
         ctx.accounts.close_vault()?;
         Ok(())

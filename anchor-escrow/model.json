@@ -43,10 +43,10 @@ pub struct Make<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Interface<'info, TokenInterface>,
 }",
-  "comments": "// This struct is an anchor context that holds nessesary accounts for its functions",
+  "comments": "// This struct is an anchor context that holds nessesary accounts for make instructions",
   "dependencies": ["Escrow","derive","instruction"],
   "line_numbers": [9, 47],
-  "docstring": "make anchor Context to Initiate and transfer into Escrow PDA",
+  "docstring": "a make anchor Context to Initiate and transfer into Escrow PDA",
   "related_functions": []
 },
 {
@@ -155,4 +155,171 @@ impl Escrow {
   "line_numbers": [5, 40],
   "docstring": "Escrow pda for anchor escrow program.",
   "related_functions": []
+},
+{
+  "id": "anchor_005",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "take.rs",
+  "code_snippet": "#[derive(Accounts)]
+pub struct Take<'info> {
+    #[account(mut)]
+    pub maker: SystemAccount<'info>,
+    #[account(mut)]
+    pub taker: Signer<'info>,
+
+    pub mint_a: InterfaceAccount<'info, Mint>,
+    pub mint_b: InterfaceAccount<'info, Mint>,
+
+    #[account(mut, associated_token::mint = mint_a, associated_token::authority = maker)]
+    pub maker_ata_a: InterfaceAccount<'info, TokenAccount>,
+    #[account(init_if_needed,payer = taker, associated_token::mint = mint_b, associated_token::authority = maker)]
+    pub maker_ata_b: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(init_if_needed,payer = taker, associated_token::mint = mint_a, associated_token::authority = taker)]
+    pub taker_ata_a: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut, associated_token::mint = mint_b, associated_token::authority = taker)]
+    pub taker_ata_b: InterfaceAccount<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"escrow",
+            escrow.maker.as_ref(),
+            escrow.seed.to_le_bytes().as_ref()
+        ],
+        bump = escrow.escrow_bump
+    )]
+    pub escrow: Account<'info, Escrow>,
+
+    pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub system_program: Program<'info, System>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+    pub token_program: Interface<'info, TokenInterface>,
+}",
+  "comments": "// This struct is an anchor context that holds nessesary accounts for take instructions",
+  "dependencies": ["Escrow","derive","instruction"],
+  "line_numbers": [10, 45],
+  "docstring": "a take anchor Context to settle an escrow contract and transfer out of Escrow PDA into the maker and taker associated token accounts",
+  "related_functions": []
+},
+{
+  "id": "anchor_006",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "take.rs",
+  "code_snippet": "pub fn check_expiry(&self) -> Result<()> {
+        self.escrow.check_expiry()
+    }",
+  "comments": "// This function checks if the escrow contract that expired acording to the previously set slot",
+  "dependencies": ["take","Escrow.check_expiry"],
+  "line_numbers": [48, 50],
+  "docstring": "check Escrow pda for expiry slot and compare to current slot",
+  "related_functions": ["send_to_maker,withdrawl_from_vault,close_vault"]
+},
+{
+  "id": "anchor_007",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "take.rs",
+  "code_snippet": "pub fn send_to_maker(&mut self) -> Result<()> {
+        let accounts = TransferChecked {
+            from: self.taker_ata_b.to_account_info(),
+            mint: self.mint_b.to_account_info(),
+            to: self.maker_ata_b.to_account_info(),
+            authority: self.taker.to_account_info(),
+        };
+
+        let ctx = CpiContext::new(self.system_program.to_account_info(), accounts);
+
+        transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;
+
+        Ok(())
+    }",
+  "comments": "// This function transfers mint_b tokens from taker ata to maker ata according to the recieve ammount set during initiation",
+  "dependencies": ["Take","transfer_checked","CpiContext::new","TransferChecked"],
+  "line_numbers": [51, 64],
+  "docstring": "Transfer spl or token22 tokens from one user to another.",
+  "related_functions": ["withdraw_from_vault"]
+},
+{
+  "id": "anchor_008",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "take.rs",
+  "code_snippet": "pub fn withdraw_from_vault(&mut self) -> Result<()> {
+        let accounts = TransferChecked {
+            from: self.vault.to_account_info(),
+            mint: self.mint_a.to_account_info(),
+            to: self.taker_ata_a.to_account_info(),
+            authority: self.escrow.to_account_info(),
+        };
+
+        let escrow_seed = self.escrow.seed.to_le_bytes();
+        let seeds = [
+            b"escrow",
+            self.escrow.maker.as_ref(),
+            escrow_seed.as_ref(),
+            &[self.escrow.escrow_bump],
+        ];
+        let signer_seeds: &[&[&[u8]]] = &[&seeds[..]];
+
+        let ctx = CpiContext::new_with_signer(
+            self.system_program.to_account_info(),
+            accounts,
+            signer_seeds,
+        );
+
+        transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;
+        Ok(())
+    }",
+  "comments": "// This function transfers mint_a tokens from escrow vault to taker ata",
+  "dependencies": ["Take","transfer_checked","CpiContext::new_with_signer","TransferChecked"],
+  "line_numbers": [65, 90],
+  "docstring": "Transfer spl or token22 tokens from PDA owned token account interface to user ata.",
+  "related_functions": ["send_to_maker"]
+},
+{
+  "id": "anchor_009",
+  "language": "anchor",
+  "project": "escrow_program",
+  "source": "github",
+  "filename": "take.rs",
+  "code_snippet": "    pub fn close_vault(&self) -> Result<()> {
+        let cpi_accounts = CloseAccount {
+            account: self.vault.to_account_info(),
+            destination: self.taker.to_account_info(),
+            authority: self.escrow.to_account_info(),
+        };
+
+        // use binding to prevent temporary value from being dropped
+        let maker_key = self.maker.key();
+        // use binding to prevent temporary value from being dropped
+        let escrow_seed = self.escrow.seed.to_le_bytes();
+
+        let signer_seeds = &[
+            b"escrow",
+            maker_key.as_ref(),
+            escrow_seed.as_ref(),
+            &[self.escrow.escrow_bump],
+        ];
+        let binding = [&signer_seeds[..]];
+
+        let ctx = CpiContext::new_with_signer(
+            self.token_program.to_account_info(),
+            cpi_accounts,
+            &binding,
+        );
+
+        close_account(ctx)
+    }",
+  "comments": "// This function closes a PDA owned token account interface",
+  "dependencies": ["Take","close_account","CpiContext::new_with_signer","CloseAccount"],
+  "line_numbers": [91, 118],
+  "docstring": "Close PDA owned token account",
+  "related_functions": ["send_to_maker,withdraw_from_vault"]
 },

@@ -1,9 +1,5 @@
 use crate::{error::EscrowError, Escrow};
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::{
-    address_lookup_table::{instruction::create_lookup_table, AddressLookupTableAccount},
-    program::invoke_signed,
-};
 use anchor_spl::token_interface::{
     close_account, transfer_checked, CloseAccount, Mint, TokenAccount, TokenInterface,
     TransferChecked,
@@ -97,17 +93,6 @@ impl<'info> Cancel<'info> {
         );
 
         close_account(ctx)?;
-
-        // let clock = Clock::get()?;
-        // let (ix, table_key) = create_lookup_table(self.escrow.key(), self.escrow.key(), clock.slot);
-
-        // let ctx = CpiContext::new_with_signer(
-        //     self.system_program.to_account_info(),
-        //     self.escrow.to_account_info(),
-        //     &binding,
-        // );
-
-        // invoke_signed(&ix, &[ctx.accounts], &binding)?;
 
         Ok(())
     }

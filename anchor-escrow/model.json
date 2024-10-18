@@ -141,11 +141,11 @@
     "project": "escrow_program",
     "source": "github",
     "filename": "cancel.rs",
-    "code_snippet": "#[derive(Accounts)]\npub struct Take<'info> {\n    #[account(mut)]\n    pub maker: SystemAccount<'info>,\n    #[account(mut)]\n    pub taker: Signer<'info>,\n\n    pub mint_a: InterfaceAccount<'info, Mint>,\n    pub mint_b: InterfaceAccount<'info, Mint>,\n\n    #[account(mut, associated_token::mint = mint_a, associated_token::authority = maker)]\n    pub maker_ata_a: InterfaceAccount<'info, TokenAccount>,\n    #[account(init_if_needed, payer = taker, associated_token::mint = mint_b, associated_token::authority = maker)]\n    pub maker_ata_b: InterfaceAccount<'info, TokenAccount>,\n\n    #[account(init_if_needed, payer = taker, associated_token::mint = mint_a, associated_token::authority = taker)]\n    pub taker_ata_a: InterfaceAccount<'info, TokenAccount>,\n    #[account(mut, associated_token::mint = mint_b, associated_token::authority = taker)]\n    pub taker_ata_b: InterfaceAccount<'info, TokenAccount>,\n\n    #[account(\n        mut,\n        seeds = [\n            b\"escrow\",\n            escrow.maker.as_ref(),\n            escrow.seed.to_le_bytes().as_ref()\n        ],\n        bump = escrow.escrow_bump\n    )]\n    pub escrow: Account<'info, Escrow>,\n\n    pub vault: InterfaceAccount<'info, TokenAccount>,\n    pub system_program: Program<'info, System>,\n    pub associated_token_program: Program<'info, AssociatedToken>,\n    pub token_program: Interface<'info, TokenInterface>,\n}",
+    "code_snippet": "\n#[derive(Accounts)]\n     pub struct Cancel<'info> {\n    #[account(mut)]\n    pub maker: Signer<'info>,\n    pub mint_a: InterfaceAccount<'info, Mint>,\n    #[account(mut, associated_token::mint = escrow.mint_a, associated_token::authority = maker)]\n    pub maker_ata_a: InterfaceAccount<'info, TokenAccount>,\n    #[account(\n    seeds=[\n    b\"escrow_vault\",\n     escrow.key().to_bytes().as_ref(),\n    ],\n     token::authority = escrow,\n        token::mint=escrow.mint_a,\n        bump = escrow.vault_bump\n        )]\n        pub vault: InterfaceAccount<'info, TokenAccount>,\n       #[account(\n    mut,\n    has_one = maker,\n    // make sure the supplied mint account matches the mint used to make the escrow\n    has_one = mint_a @EscrowError::MintMismatch,\n    seeds = [b\"escrow\", maker.key.as_ref(), escrow.seed.to_le_bytes().as_ref()],\n    bump = escrow.escrow_bump,\n       close = maker,\n        )]\n    pub escrow: Account<'info, Escrow>,\npub token_program: Interface<'info, TokenInterface>,\npub system_program: Program<'info, System>,\n}",
     "comments": "// This struct is an anchor context that holds necessary accounts for cancel instructions",
-    "dependencies": ["Escrow", "derive", "instruction"],
+    "dependencies": ["Escrow", "derive"],
     "line_numbers": [10, 45],
-    "docstring": "a cancel anchor Context to cancel an escrow contract and and return tokens from Escrow PDA back into the maker associated token accounts then close the accounts",
+    "docstring": "a cancel anchor Context to cancel an escrow contract and return tokens from Escrow PDA back into the maker associated token accounts then close the accounts",
     "related_functions": []
   },
   {
@@ -154,7 +154,7 @@
     "project": "escrow_program",
     "source": "github",
     "filename": "cancel.rs",
-    "code_snippet": "pub fn withdraw_from_vault(&mut self) -> Result<()> {\n        let accounts = TransferChecked {\n            from: self.vault.to_account_info(),\n            mint: self.mint_a.to_account_info(),\n            to: self.taker_ata_a.to_account_info(),\n            authority: self.escrow.to_account_info(),\n        };\n\n        let escrow_seed = self.escrow.seed.to_le_bytes();\n        let seeds = [\n            b\"escrow\",\n            self.escrow.maker.as_ref(),\n            escrow_seed.as_ref(),\n            &[self.escrow.escrow_bump],\n        ];\n        let signer_seeds: &[&[&[u8]]] = &[&seeds[..]];\n\n        let ctx = CpiContext::new_with_signer(\n            self.system_program.to_account_info(),\n            accounts,\n            signer_seeds,\n        );\n\n        transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;\n        Ok(())\n    }",
+    "code_snippet": "pub fn withdraw_from_vault(&mut self) -> Result<()> {\n    let accounts = TransferChecked {\n        from: self.vault.to_account_info(),\n        mint: self.mint_a.to_account_info(),\n        to: self.maker_ata_a.to_account_info(),\n        authority: self.escrow.to_account_info(),\n    };\n\n    let maker_key = self.maker.key();\n    let escrow_seed = self.escrow.seed.to_le_bytes();\n    let signer_seeds = &[\n        b\"escrow\",\n        maker_key.as_ref(),\n        escrow_seed.as_ref(),\n        &[self.escrow.escrow_bump],\n    ];\n    let binding = [&signer_seeds[..]];\n\n    let ctx = CpiContext::new_with_signer(self.token_program.to_account_info(), accounts, &binding);\n\n    transfer_checked(ctx, self.escrow.recieve_amount, self.mint_a.decimals)?;\n    Ok(())\n}",
     "comments": "// This function returns mint_a tokens from escrow vault back into the maker ata",
     "dependencies": [
       "Cancel",
@@ -172,7 +172,7 @@
     "project": "escrow_program",
     "source": "github",
     "filename": "cancel.rs",
-    "code_snippet": "pub fn close_vault(&self) -> Result<()> {\n        let cpi_accounts = CloseAccount {\n            account: self.vault.to_account_info(),\n            destination: self.taker.to_account_info(),\n            authority: self.escrow.to_account_info(),\n        };\n\n        // use binding to prevent temporary value from being dropped\n        let maker_key = self.maker.key();\n        // use binding to prevent temporary value from being dropped\n        let escrow_seed = self.escrow.seed.to_le_bytes();\n\n        let signer_seeds = &[\n            b\"escrow\",\n            maker_key.as_ref(),\n            escrow_seed.as_ref(),\n            &[self.escrow.escrow_bump],\n        ];\n        let binding = [&signer_seeds[..]];\n\n        let ctx = CpiContext::new_with_signer(\n            self.token_program.to_account_info(),\n            cpi_accounts,\n            &binding,\n        );\n\n        close_account(ctx)\n    }",
+    "code_snippet": "pub fn close_vault(&self) -> Result<()> {\n    let cpi_accounts = CloseAccount {\n        account: self.vault.to_account_info(),\n        destination: self.maker.to_account_info(),\n        authority: self.escrow.to_account_info(),\n    };\n\n    // use binding to prevent temporary value from being dropped\n    let maker_key = self.maker.key();\n    // use binding to prevent temporary value from being dropped\n    let escrow_seed = self.escrow.seed.to_le_bytes();\n\n    let signer_seeds = &[\n        b\"escrow\",\n        maker_key.as_ref(),\n        escrow_seed.as_ref(),\n        &[self.escrow.escrow_bump],\n    ];\n    let binding = [&signer_seeds[..]];\n\n    let ctx = CpiContext::new_with_signer(\n        self.token_program.to_account_info(),\n        cpi_accounts,\n        &binding,\n    );\n\n    close_account(ctx)?;\n\n    Ok(())\n}",
     "comments": "// This function closes a PDA owned token account interface",
     "dependencies": [
       "Cancel",
@@ -183,5 +183,31 @@
     "line_numbers": [69, 98],
     "docstring": "Close PDA owned token account",
     "related_functions": ["withdraw_from_vault"]
+  },
+  {
+    "id": "anchor_013",
+    "language": "anchor",
+    "project": "escrow_program",
+    "source": "github",
+    "filename": "update.rs",
+    "code_snippet": "#[derive(Accounts)]\npub struct Update<'info> {\n    #[account(mut)]\n    pub maker: Signer<'info>,\n    pub new_taker_token: Account<'info, Mint>,\n    #[account(\n        mut,\n        has_one = maker,\n        seeds = [b\"escrow\", maker.key.as_ref(), escrow.seed.to_le_bytes().as_ref()],\n        bump = escrow.escrow_bump,\n        // escrow is_mutable field has to be true in order to update it\n        constraint = escrow.is_mutable @EscrowError::EscrowNotMutable,\n    )]\n    pub escrow: Box<Account<'info, Escrow>>, \n}",
+    "comments": "// This struct is an anchor context that holds necessary accounts for cancel instructions",
+    "dependencies": ["Escrow", "derive", "instruction"],
+    "line_numbers": [6, 20],
+    "docstring": "an update anchor Context to mpdify an escrow contract according to instructions parameters passed by the maker",
+    "related_functions": []
+  },
+  {
+    "id": "anchor_014",
+    "language": "anchor",
+    "project": "escrow_program",
+    "source": "github",
+    "filename": "update.rs",
+    "code_snippet": "pub fn update(&mut self, recieve_amount: u64, expiry: u64, is_mutable: bool) -> Result<()> {\n    let escrow = &mut self.escrow;\n    escrow.mint_b = *self.new_taker_token.to_account_info().key;\n    escrow.recieve_amount = recieve_amount;\n    escrow.set_expiry_relative(expiry)?;\n    escrow.is_mutable = is_mutable;\n    Ok(())\n}",
+    "comments": "// This function closes a PDA owned token account interface",
+    "dependencies": ["Update", "Escrow.set_expiry_relitive"],
+    "line_numbers": [23, 30],
+    "docstring": "Update Escrow PDA account fields according to instructions parameters",
+    "related_functions": []
   }
 ]
